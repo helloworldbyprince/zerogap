@@ -1,0 +1,77 @@
+export const CONFIG = {
+  region: 'asia-south1',
+  app: {
+    name: 'ZeroGap',
+    tagline: 'Zero gap. Zero notice.',
+    supportEmail: 'team@zerogap.in',
+  },
+  gstr1: {
+    dueDay: 11,
+    b2clThreshold: 250000,
+  },
+  gstr2b: {
+    generatedDay: 14,
+  },
+  gstr3b: {
+    dueDay: 20,
+  },
+  drc01c: {
+    replyDays: 7,
+  },
+  validation: {
+    taxTolerance: 0.01,
+    hsnDigitsUnder5Cr: 4,
+    hsnDigitsOver5Cr: 6,
+    gstinRegex: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
+  },
+  docAI: {
+    confidenceWarnBelow: 0.85,
+  },
+  uploads: {
+    maxFiles: 25,
+    maxFileMB: 10,
+    allowedTypes: ['pdf', 'jpg', 'jpeg', 'png'],
+  },
+  ui: {
+    pageSize: 50,
+    maxWidthPx: 1200,
+    toastDurationMs: 4000,
+    cardRadiusPx: 16,
+    buttonRadiusPx: 12,
+    pillRadiusPx: 999,
+  },
+  perf: {
+    dashboardP95ms: 800,
+    explainFirstTokenMs: 1500,
+    uploadAcceptMs: 300,
+  },
+  demo: {
+    businessName: 'Sharma Traders (Demo)',
+    months: 3,
+    periodLabel: 'September 2026',
+    periodCode: '202609',
+    moneyAtRisk: 184200,
+    mismatchCount: 14,
+    salesBillsReady: 24,
+    salesTaxableValue: 842000,
+    salesTax: 151560,
+    itcAvailable2B: 142300,
+    itcClaimed3B: 140000,
+    taxPaid3B: 151560,
+    creditCheckGap: 2300,
+    b2bCount: 18,
+    b2clCount: 1,
+    b2csCount: 5,
+    flagCount: 3,
+    matchScore: 94,
+    matchedCount: 41,
+    totalBillsCount: 45,
+    missingIn2BCount: 3,
+    missingInBooksCount: 1,
+    mismatchesCount: 4,
+    stepsCompleted: 2,
+    totalSteps: 4,
+  },
+} as const;
+
+export type AppConfig = typeof CONFIG;
