@@ -48,6 +48,9 @@ const memoryStore = {
   periods: new Map<string, any>(),
   jobs: new Map<string, any>(),
   invoices: new Map<string, any>(),
+  purchases: new Map<string, any>(),
+  gstr2b: new Map<string, any>(),
+  reco: new Map<string, any>(),
 };
 
 // Seed demo business & period in memory as guaranteed fallback
@@ -615,6 +618,370 @@ function seedDemoInvoices() {
 }
 
 seedDemoInvoices();
+
+// Seed Demo Purchases, GSTR-2B, and Reconciliation Records
+function seedDemoPurchasesAnd2B() {
+  // 1. Unfiled purchase bills (In books, missing in 2B)
+  const unfiled = [
+    {
+      id: 'pur_104',
+      inum: 'INV-104',
+      idt: '04-09-2026',
+      supplierGstin: '06AABCS1429B1ZB',
+      supplierName: 'Sharma Traders',
+      txval: 58000,
+      tax: 10440,
+      cause: 'SUPPLIER_NOT_FILED',
+      severity: 'red',
+      causeLabel: "Supplier didn't file this bill",
+      amountAtRisk: 10440,
+      whatHappened: "Sharma Traders' INV-104 (₹58,000) is in your books but missing from your GSTR-2B.",
+      moneyInvolved: "₹10,440 of tax credit at risk (Why? ⓘ)",
+      whyItMatters: "You can only claim credit for bills your supplier actually filed. Until they file, this ₹10,440 is blocked.",
+      actions: [
+        { id: '1', text: 'Call Sharma Traders — ask them to file GSTR-1', checked: true },
+        { id: '2', text: 'If they refuse, keep the bill ready for DRC-01C response', checked: false },
+      ],
+    },
+    {
+      id: 'pur_118',
+      inum: 'INV-118',
+      idt: '12-09-2026',
+      supplierGstin: '07BBCDS2530C2ZC',
+      supplierName: 'Kalyan Hardware Supplies',
+      txval: 100000,
+      tax: 18000,
+      cause: 'SUPPLIER_NOT_FILED',
+      severity: 'red',
+      causeLabel: "Supplier didn't file this bill",
+      amountAtRisk: 18000,
+      whatHappened: "Kalyan Hardware's INV-118 (₹1,00,000) is in your books but missing from your GSTR-2B.",
+      moneyInvolved: "₹18,000 of tax credit at risk (Why? ⓘ)",
+      whyItMatters: "Supplier missed the monthly GSTR-1 cutoff date. Credit cannot be claimed in GSTR-3B this month.",
+      actions: [
+        { id: '1', text: 'Send formal reminder notice to supplier finance team', checked: false },
+        { id: '2', text: 'Track for inclusion in next month GSTR-2B', checked: true },
+      ],
+    },
+    {
+      id: 'pur_132',
+      inum: 'INV-132',
+      idt: '19-09-2026',
+      supplierGstin: '06CCDES3641D3ZD',
+      supplierName: 'Metro Tech Distributors',
+      txval: 800000,
+      tax: 144000,
+      cause: 'SUPPLIER_NOT_FILED',
+      severity: 'red',
+      causeLabel: "Supplier didn't file this bill",
+      amountAtRisk: 144000,
+      whatHappened: "Metro Tech's high-value capital bill INV-132 (₹8,00,000) was not reported in their outward GSTR-1.",
+      moneyInvolved: "₹1,44,000 large tax credit blocked (Why? ⓘ)",
+      whyItMatters: "High value gap will immediately trigger automated DRC-01C notice under Rule 88D if claimed in 3B.",
+      actions: [
+        { id: '1', text: 'Hold pending supplier payment until GSTR-1 filing ARN is provided', checked: true },
+        { id: '2', text: 'Verify supplier GST filing frequency (Quarterly QRMP vs Monthly)', checked: false },
+      ],
+    },
+  ];
+
+  // 2. Mismatch bills (Difference between books and 2B)
+  const mismatches = [
+    {
+      id: 'pur_108',
+      inum: 'INV-108',
+      idt: '08-09-2026',
+      supplierGstin: '07DDDES4752E4ZE',
+      supplierName: 'Apex Industrial Parts',
+      booksTxval: 180000,
+      booksTax: 32400,
+      gstr2bTxval: 150000,
+      gstr2bTax: 27000,
+      cause: 'VALUE_MISMATCH',
+      severity: 'amber',
+      causeLabel: 'Tax value mismatch between books and 2B',
+      amountAtRisk: 5400,
+      whatHappened: "For INV-108, your books record ₹32,400 tax, but GSTR-2B only shows ₹27,000.",
+      moneyInvolved: "₹5,400 excess credit in books (Why? ⓘ)",
+      whyItMatters: "Supplier likely excluded post-sale freight/packing charges in their uploaded return.",
+      actions: [
+        { id: '1', text: 'Request debit note from supplier for ₹30,000 differential taxable value', checked: true },
+        { id: '2', text: 'Claim only ₹27,000 in this month GSTR-3B to stay compliant', checked: false },
+      ],
+    },
+    {
+      id: 'pur_115',
+      inum: 'INV-115',
+      idt: '11-09-2026',
+      supplierGstin: '06EEDES5863F5ZF',
+      supplierName: 'Delta Logistics Services',
+      booksTxval: 80000,
+      booksTax: 14400,
+      gstr2bTxval: 65000,
+      gstr2bTax: 11700,
+      cause: 'VALUE_MISMATCH',
+      severity: 'amber',
+      causeLabel: 'Tax value mismatch between books and 2B',
+      amountAtRisk: 2700,
+      whatHappened: "Your books reflect ₹14,400 tax for logistics bill INV-115, but 2B reflects ₹11,700.",
+      moneyInvolved: "₹2,700 differential ITC (Why? ⓘ)",
+      whyItMatters: "Claiming ₹14,400 without matching 2B triggers red flag under Rule 88D.",
+      actions: [
+        { id: '1', text: 'Reconcile consignment weight slip against billed invoice', checked: false },
+        { id: '2', text: 'Request amended B2BA entry in next GSTR-1', checked: false },
+      ],
+    },
+    {
+      id: 'pur_122',
+      inum: 'INV-122',
+      idt: '15-09-2026',
+      supplierGstin: '07FFDES6974G6ZG',
+      supplierName: 'United Steel Traders',
+      booksTxval: 120000,
+      booksTax: 21600,
+      gstr2bTxval: 100000,
+      gstr2bTax: 18000,
+      cause: 'VALUE_MISMATCH',
+      severity: 'amber',
+      causeLabel: 'Tax value mismatch between books and 2B',
+      amountAtRisk: 3600,
+      whatHappened: "United Steel entered ₹1,00,000 on portal instead of full invoice value of ₹1,20,000.",
+      moneyInvolved: "₹3,600 tax credit discrepancy (Why? ⓘ)",
+      whyItMatters: "Credit difference will block matching during automated annual audit.",
+      actions: [
+        { id: '1', text: 'Obtain copy of supplier GSTR-1 filing summary', checked: false },
+        { id: '2', text: 'Reconcile invoice serial numbers', checked: true },
+      ],
+    },
+    {
+      id: 'pur_129',
+      inum: 'INV-129',
+      idt: '18-09-2026',
+      supplierGstin: '06GGDES7085H7ZH',
+      supplierName: 'Zenith Electronics LLP',
+      booksTxval: 50000,
+      booksTax: 9000,
+      gstr2bTxval: 50000,
+      gstr2bTax: 8940,
+      cause: 'VALUE_MISMATCH',
+      severity: 'amber',
+      causeLabel: 'Rounding difference in tax',
+      amountAtRisk: 60,
+      whatHappened: "Rounding difference of ₹60 between internal software and supplier portal entry.",
+      moneyInvolved: "₹60 minor variance (Why? ⓘ)",
+      whyItMatters: "Within statutory round-off limits, but recommended to align.",
+      actions: [
+        { id: '1', text: 'Accept supplier rounded figure of ₹8,940', checked: true },
+      ],
+    },
+  ];
+
+  // 3. Record in 2B, but missing in books (Unclaimed credit!)
+  const missingInBooks = [
+    {
+      id: 'gstr2b_208',
+      inum: 'INV-208',
+      idt: '20-09-2026',
+      supplierGstin: '07HHDES8196J8ZJ',
+      supplierName: 'Global Cable Corporation',
+      booksTxval: 0,
+      booksTax: 0,
+      gstr2bTxval: 47222,
+      gstr2bTax: 8500,
+      cause: 'MISSING_IN_BOOKS',
+      severity: 'blue',
+      causeLabel: 'In GSTR-2B but missing in your books',
+      amountAtRisk: 0,
+      whatHappened: "Global Cable Corporation uploaded bill INV-208 with ₹8,500 ITC, but it is not booked in your accounts.",
+      moneyInvolved: "₹8,500 unclaimed tax credit available to you! (Why? ⓘ)",
+      whyItMatters: "You are entitled to claim this credit to reduce your monthly tax cash payout.",
+      actions: [
+        { id: '1', text: 'Confirm receipt of goods/services with warehouse manager', checked: false },
+        { id: '2', text: 'Enter bill into purchase register to claim ₹8,500 ITC', checked: false },
+      ],
+    },
+  ];
+
+  // Populate purchase invoices
+  unfiled.forEach((u) => {
+    memoryStore.purchases.set(u.id, {
+      id: u.id,
+      bizId: DEMO_BIZ_ID,
+      period: DEMO_PERIOD,
+      kind: 'purchase',
+      inum: u.inum,
+      idt: u.idt,
+      supplierGstin: u.supplierGstin,
+      supplierName: u.supplierName,
+      totals: { txval: u.txval, totalTax: u.tax },
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  mismatches.forEach((m) => {
+    memoryStore.purchases.set(m.id, {
+      id: m.id,
+      bizId: DEMO_BIZ_ID,
+      period: DEMO_PERIOD,
+      kind: 'purchase',
+      inum: m.inum,
+      idt: m.idt,
+      supplierGstin: m.supplierGstin,
+      supplierName: m.supplierName,
+      totals: { txval: m.booksTxval, totalTax: m.booksTax },
+      createdAt: new Date().toISOString(),
+    });
+
+    memoryStore.gstr2b.set(`gstr2b_${m.inum}`, {
+      id: `gstr2b_${m.inum}`,
+      bizId: DEMO_BIZ_ID,
+      period: DEMO_PERIOD,
+      inum: m.inum,
+      idt: m.idt,
+      supplierGstin: m.supplierGstin,
+      supplierName: m.supplierName,
+      txval: m.gstr2bTxval,
+      iamt: m.gstr2bTax,
+      camt: 0,
+      samt: 0,
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  missingInBooks.forEach((mb) => {
+    memoryStore.gstr2b.set(mb.id, {
+      id: mb.id,
+      bizId: DEMO_BIZ_ID,
+      period: DEMO_PERIOD,
+      inum: mb.inum,
+      idt: mb.idt,
+      supplierGstin: mb.supplierGstin,
+      supplierName: mb.supplierName,
+      txval: mb.gstr2bTxval,
+      iamt: mb.gstr2bTax,
+      camt: 0,
+      samt: 0,
+      createdAt: new Date().toISOString(),
+    });
+  });
+
+  // Populate 37 matched purchase bills
+  for (let i = 1; i <= 37; i++) {
+    const id = `pur_match_${i}`;
+    const inum = `INV-M${String(i).padStart(3, '0')}`;
+    const txval = 15000 + i * 2000;
+    const tax = Math.round(txval * 0.18);
+    const supplierGstin = `06AAAPL${String(1000 + i)}K1Z5`;
+    const supplierName = `Supplier Partner ${i}`;
+
+    memoryStore.purchases.set(id, {
+      id,
+      bizId: DEMO_BIZ_ID,
+      period: DEMO_PERIOD,
+      kind: 'purchase',
+      inum,
+      idt: '15-09-2026',
+      supplierGstin,
+      supplierName,
+      totals: { txval, totalTax: tax },
+      createdAt: new Date().toISOString(),
+    });
+
+    memoryStore.gstr2b.set(`2b_${id}`, {
+      id: `2b_${id}`,
+      bizId: DEMO_BIZ_ID,
+      period: DEMO_PERIOD,
+      inum,
+      idt: '15-09-2026',
+      supplierGstin,
+      supplierName,
+      txval,
+      iamt: tax,
+      camt: 0,
+      samt: 0,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // Populate Reconciled Results in memory
+  const allResults = [
+    ...unfiled.map((u) => ({
+      id: `reco_${u.id}`,
+      inum: u.inum,
+      idt: u.idt,
+      supplierGstin: u.supplierGstin,
+      supplierName: u.supplierName,
+      cause: u.cause,
+      severity: u.severity,
+      causeLabel: u.causeLabel,
+      booksTxval: u.txval,
+      booksTax: u.tax,
+      gstr2bTxval: 0,
+      gstr2bTax: 0,
+      amountAtRisk: u.amountAtRisk,
+      whatHappened: u.whatHappened,
+      moneyInvolved: u.moneyInvolved,
+      whyItMatters: u.whyItMatters,
+      actions: u.actions,
+    })),
+    ...mismatches.map((m) => ({
+      id: `reco_${m.id}`,
+      inum: m.inum,
+      idt: m.idt,
+      supplierGstin: m.supplierGstin,
+      supplierName: m.supplierName,
+      cause: m.cause,
+      severity: m.severity,
+      causeLabel: m.causeLabel,
+      booksTxval: m.booksTxval,
+      booksTax: m.booksTax,
+      gstr2bTxval: m.gstr2bTxval,
+      gstr2bTax: m.gstr2bTax,
+      amountAtRisk: m.amountAtRisk,
+      whatHappened: m.whatHappened,
+      moneyInvolved: m.moneyInvolved,
+      whyItMatters: m.whyItMatters,
+      actions: m.actions,
+    })),
+    ...missingInBooks.map((mb) => ({
+      id: `reco_${mb.id}`,
+      inum: mb.inum,
+      idt: mb.idt,
+      supplierGstin: mb.supplierGstin,
+      supplierName: mb.supplierName,
+      cause: mb.cause,
+      severity: mb.severity,
+      causeLabel: mb.causeLabel,
+      booksTxval: 0,
+      booksTax: 0,
+      gstr2bTxval: mb.gstr2bTxval,
+      gstr2bTax: mb.gstr2bTax,
+      amountAtRisk: 0,
+      whatHappened: mb.whatHappened,
+      moneyInvolved: mb.moneyInvolved,
+      whyItMatters: mb.whyItMatters,
+      actions: mb.actions,
+    })),
+  ];
+
+  const recoSnapshot = {
+    bizId: DEMO_BIZ_ID,
+    period: DEMO_PERIOD,
+    matchScore: CONFIG.demo.matchScore, // 94%
+    matchedCount: CONFIG.demo.matchedCount, // 41
+    totalBillsCount: CONFIG.demo.totalBillsCount, // 45
+    moneyAtRisk: CONFIG.demo.moneyAtRisk, // 184200
+    missingIn2BCount: CONFIG.demo.missingIn2BCount, // 3
+    missingInBooksCount: CONFIG.demo.missingInBooksCount, // 1
+    mismatchesCount: CONFIG.demo.mismatchesCount, // 4
+    items: allResults,
+    reconciledAt: new Date().toISOString(),
+  };
+
+  memoryStore.reco.set(`${DEMO_BIZ_ID}_${DEMO_PERIOD}`, recoSnapshot);
+}
+
+seedDemoPurchasesAnd2B();
 
 export { adminApp, memoryStore, DEMO_BIZ_ID, DEMO_PERIOD };
 
