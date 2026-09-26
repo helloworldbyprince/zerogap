@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google-cloud/documentai": "^10.1.0",
     "@google-cloud/firestore": "^9.2.0",
     "@google-cloud/storage": "^8.2.0",
     "@radix-ui/react-dialog": "^1.1.23",
