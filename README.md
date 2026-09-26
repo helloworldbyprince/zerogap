@@ -259,6 +259,7 @@ zerogap/
 │   │   └── api/               # Next.js Route Handlers (Zod validated)
 │   │       ├── businesses/    # Business profiles CRUD
 │   │       ├── dashboard/     # Precomputed period snapshot (1 read)
+│   │       ├── gstr1/         # GSTR-1 JSON & Excel export API
 │   │       ├── invoices/      # Invoices list, PATCH correction, confirm-all
 │   │       ├── uploads/       # 202 Accepted upload pipeline
 │   │       └── jobs/          # Async worker status polling
@@ -274,6 +275,7 @@ zerogap/
 │       ├── config.ts          # Standing Config Law (§10)
 │       ├── copy.ts            # English & Hinglish copy deck
 │       ├── docai.ts           # Google Cloud Document AI client & parser
+│       ├── gstr1.ts           # Byte-exact GSTR-1 JSON & Excel builder
 │       ├── hsn.ts             # HSN Master reference as of September 2026
 │       ├── classify.ts        # Auto-classification (B2B, B2CL, B2CS)
 │       ├── validate.ts        # Statutory GST validation engine
