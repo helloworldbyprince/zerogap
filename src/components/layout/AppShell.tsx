@@ -231,13 +231,24 @@ function AppShellInner({ children }: AppShellProps) {
             {/* Google User Avatar / Sign-In Button */}
             {user ? (
               <div className="flex items-center gap-2">
-                <div
-                  className="h-8 w-8 rounded-full bg-[#F5A524] text-[#1A1A1A] font-bold text-xs flex items-center justify-center border border-[#E3E7EE] cursor-pointer shadow-xs"
-                  title={user.email || 'Logged in'}
+                <button
+                  type="button"
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-[10px] bg-white border border-[#E3E7EE] hover:border-[#F5A524] transition-colors cursor-pointer shadow-xs"
+                  title={`${user.displayName || user.email || 'User'} — click to sign out`}
                   onClick={handleSignOut}
                 >
-                  {user.displayName ? user.displayName[0].toUpperCase() : 'U'}
-                </div>
+                  <div className="h-6 w-6 rounded-full bg-[#F5A524] text-[#1A1A1A] font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
+                    {user.photoURL ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.photoURL} alt={user.displayName || 'User'} className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{user.displayName ? user.displayName[0].toUpperCase() : 'U'}</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-[#111418] max-w-[120px] truncate hidden sm:inline">
+                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User'}
+                  </span>
+                </button>
               </div>
             ) : (
               <Button
