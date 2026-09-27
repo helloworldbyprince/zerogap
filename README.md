@@ -251,17 +251,18 @@ zerogap/
 │   │   ├── app/               # Authenticated application shell
 │   │   │   ├── page.tsx       # Screen 2: Dashboard with ₹1,84,200 Money Hero
 │   │   │   ├── sales/         # Screen 3: F1 Sales bills → GSTR-1
-│   │   │   ├── purchases/     # Screen 4: F2 Purchases vs 2B reconciliation
-│   │   │   ├── triangle/      # Screen 5: F3 GSTR-1 vs 2B vs 3B audit
-│   │   │   ├── periods/       # Screen 6: F4 BigQuery period trends
-│   │   │   ├── reports/       # Audit report generation
-│   │   │   └── settings/      # Business & GSTIN configuration
+│   │   │   ├── purchases/     # Screen 4: F2 Purchases vs 2B reconciliation & ₹1,84,200 risk ring
+│   │   │   ├── triangle/      # Screen 5: F3 GSTR-1 vs 2B vs 3B audit & Three Giant Numbers
+│   │   │   ├── periods/       # Screen 6: F4 BigQuery historical periods & trends
+│   │   │   ├── reports/       # Screen 7: Executive audit reports & print/WhatsApp share
+│   │   │   └── settings/      # Screen 8: Business & GSTIN configuration & demo reset
 │   │   └── api/               # Next.js Route Handlers (Zod validated)
 │   │       ├── businesses/    # Business profiles CRUD
 │   │       ├── dashboard/     # Precomputed period snapshot (1 read)
-│   │       ├── explain/       # Gemini Flash SSE streaming API (Phase 6)
+│   │       ├── explain/       # Vertex AI Gemini Flash SSE streaming API (Phase 6)
 │   │       ├── gstr1/         # GSTR-1 JSON & Excel export API (Phase 4)
 │   │       ├── invoices/      # Invoices list, PATCH correction, confirm-all
+│   │       ├── periods/       # BigQuery monthly, quarterly, yearly rollups (Phase 7)
 │   │       ├── reconcile/     # F2 Matching & reconciliation API (Phase 5)
 │   │       ├── triangle/      # F3 Triangle statutory audit API (Phase 6)
 │   │       ├── uploads/       # 202 Accepted upload pipeline
@@ -277,10 +278,11 @@ zerogap/
 │   └── lib/
 │       ├── config.ts          # Standing Config Law (§10)
 │       ├── copy.ts            # English & Hinglish copy deck
-│       ├── LanguageContext.tsx# Reactive English / Hindi language provider
+│       ├── LanguageContext.tsx# Reactive English / Hindi language context
 │       ├── docai.ts           # Google Cloud Document AI client & parser
 │       ├── vertex.ts          # Vertex AI Gemini Flash SSE streaming client
 │       ├── triangle.ts        # Statutory triangle audit engine (Rule 88C/88D)
+│       ├── bigquery.ts        # BigQuery partitioned table client & rollups (Phase 7)
 │       ├── gstr1.ts           # Byte-exact GSTR-1 JSON & Excel builder
 │       ├── gstr2b.ts          # GSTR-2B Excel & CSV portal parser
 │       ├── match.ts           # Deterministic matching engine & §2.8 taxonomy
