@@ -1,12 +1,15 @@
 # ZeroGap (Zero gap. Zero notice.)
 ### AI GST Reconciliation & Filing Copilot for Indian MSMEs and Chartered Accountants
 
+[![Live Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Prototype%20(asia--south1)-17C964?style=for-the-badge&logo=googlecloud&logoColor=white)](https://zerogap-677303028609.asia-south1.run.app)
 [![AI Builder Cup 2026](https://img.shields.io/badge/AI%20Builder%20Cup-2026%20BFSI%20Track-F5A524?style=for-the-badge&logo=googlecloud&logoColor=black)](https://github.com/helloworldbyprince/zerogap)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-asia--south1%20(Mumbai)-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://cloud.google.com)
 [![Document AI](https://img.shields.io/badge/Google%20Cloud-Document%20AI%20Invoice%20Parser-17C964?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com/document-ai)
 [![Gemini 2.0](https://img.shields.io/badge/Vertex%20AI-Gemini%202.0%20Flash%20(SSE)-3B82F6?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com/vertex-ai)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15%20App%20Router-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
-[![Tailwind v4](https://img.shields.io/badge/Tailwind-CSS%20v4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+
+> **🚀 Live Cloud Run Deployment**: **[https://zerogap-677303028609.asia-south1.run.app](https://zerogap-677303028609.asia-south1.run.app)**  
+> Hosted in region `asia-south1` (Mumbai) on Google Cloud Run for the Google Cloud AI Builder Cup 2026 (BFSI Track).
 
 ---
 
@@ -225,14 +228,18 @@ Open [http://localhost:3002](http://localhost:3002) in your browser.
 
 Experience the complete application in under 60 seconds:
 
-1. **Screen 0 (Landing):** Visit [`/`](http://localhost:3002) $\rightarrow$ Click **"Try the live demo"**.
+1. **Screen 0 (Landing):** Visit [https://zerogap-677303028609.asia-south1.run.app](https://zerogap-677303028609.asia-south1.run.app) $\rightarrow$ Click **"Try the live demo"**.
 2. **Screen 1 (Onboarding):** Pre-seeded with *Sharma Traders (Demo)* $\rightarrow$ Click **"Load demo data — 1 click"**.
 3. **Screen 2 (Dashboard):** View the **₹1,84,200 Money Hero**, test the **"Why? ⓘ"** modal, toggle between English and Hinglish (`हिं`), and inspect the 3 feature cards.
-4. **Screen 3 (F1 Sales Review):** Navigate to [`/app/sales`](http://localhost:3002/app/sales):
+4. **Screen 3 (F1 Sales Review):** Navigate to [`/app/sales`](https://zerogap-677303028609.asia-south1.run.app/app/sales):
    - **Step A:** Test the drag-and-drop zone or click *"Load Sample Bills"* to watch Document AI progress bars parse files in real-time.
    - **Step B:** Review the 24 bills table. Notice the `RATE?` warning pill on `INV-007` (billed 12%, HSN 8471 usually 18%) and `GSTIN?` error on `INV-019`.
    - **Inspection Drawer:** Click on `INV-007` to open the right inspection drawer showing the bill preview and confidence score. Correct the rate to 18% $\rightarrow$ Click *"Save & Re-validate"* $\rightarrow$ Watch the row immediately turn green!
    - **Bulk Confirmation:** Click *"Confirm all green rows"* to bulk-verify ready bills.
+5. **Screen 4 (F2 Purchases vs 2B):** Reconcile 45 purchase bills against GSTR-2B $\rightarrow$ review unfiled supplier invoices and 1-click WhatsApp hold.
+6. **Screen 5 (F3 Triangle Audit):** Audit GSTR-1 vs 2B vs 3B and select Rule 88D/88C statutory compliance justifications.
+7. **Screen 6 (F4 Multi-Period):** Partitioned BigQuery rollups across month, quarter, and year feeding GSTR-9.
+8. **Screen 7 (Reports):** Export print-ready reconciliation summaries and CA WhatsApp briefing.
 
 ---
 
