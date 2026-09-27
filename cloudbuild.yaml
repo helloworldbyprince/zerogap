@@ -1,0 +1,48 @@
+steps:
+  # 1. Build container image using Google Cloud Build
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/zerogap/web:$COMMIT_SHA',
+        '-t',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/zerogap/web:latest',
+        '.',
+      ]
+
+  # 2. Push container image to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'push',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/zerogap/web:latest',
+      ]
+
+  # 3. Deploy to Cloud Run in asia-south1 with min-instances: 1
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      [
+        'run',
+        'deploy',
+        'zerogap',
+        '--image',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/zerogap/web:latest',
+        '--region',
+        'asia-south1',
+        '--platform',
+        'managed',
+        '--allow-unauthenticated',
+        '--min-instances',
+        '1',
+        '--memory',
+        '1Gi',
+        '--cpu',
+        '1',
+        '--port',
+        '8080',
+      ]
+
+images:
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/zerogap/web:latest'
