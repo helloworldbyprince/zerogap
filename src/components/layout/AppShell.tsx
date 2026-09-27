@@ -88,12 +88,26 @@ function AppShellInner({ children }: AppShellProps) {
     },
   ];
 
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
   const handleGoogleSignIn = async () => {
-    const res = await signInWithGoogle();
-    if (res.user) {
-      toast.success(`Signed in as ${res.user.displayName || res.user.email}`);
-    } else if (res.error) {
-      toast.info('Using guest demo session.');
+    setIsSigningIn(true);
+    try {
+      const res = await signInWithGoogle();
+      if (res.user) {
+        toast.success(`Signed in as ${res.user.displayName || res.user.email}`);
+      } else if (res.error) {
+        // If popup closed by user, don't show noisy error
+        if (res.error.includes('popup-closed-by-user')) {
+          toast.info('Sign-in cancelled');
+        } else {
+          toast.error(res.error);
+        }
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to sign in');
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -229,12 +243,13 @@ function AppShellInner({ children }: AppShellProps) {
               <Button
                 type="button"
                 onClick={handleGoogleSignIn}
+                disabled={isSigningIn}
                 variant="secondary"
                 size="sm"
-                className="h-8 text-xs font-medium"
+                className="h-8 text-xs font-medium cursor-pointer"
               >
                 <UserIcon className="h-3.5 w-3.5 mr-1" />
-                Sign in
+                {isSigningIn ? 'Signing in...' : 'Sign in'}
               </Button>
             )}
           </div>
