@@ -259,9 +259,11 @@ zerogap/
 │   │   └── api/               # Next.js Route Handlers (Zod validated)
 │   │       ├── businesses/    # Business profiles CRUD
 │   │       ├── dashboard/     # Precomputed period snapshot (1 read)
+│   │       ├── explain/       # Gemini Flash SSE streaming API (Phase 6)
 │   │       ├── gstr1/         # GSTR-1 JSON & Excel export API (Phase 4)
 │   │       ├── invoices/      # Invoices list, PATCH correction, confirm-all
 │   │       ├── reconcile/     # F2 Matching & reconciliation API (Phase 5)
+│   │       ├── triangle/      # F3 Triangle statutory audit API (Phase 6)
 │   │       ├── uploads/       # 202 Accepted upload pipeline
 │   │       └── jobs/          # Async worker status polling
 │   ├── components/
@@ -275,7 +277,10 @@ zerogap/
 │   └── lib/
 │       ├── config.ts          # Standing Config Law (§10)
 │       ├── copy.ts            # English & Hinglish copy deck
+│       ├── LanguageContext.tsx# Reactive English / Hindi language provider
 │       ├── docai.ts           # Google Cloud Document AI client & parser
+│       ├── vertex.ts          # Vertex AI Gemini Flash SSE streaming client
+│       ├── triangle.ts        # Statutory triangle audit engine (Rule 88C/88D)
 │       ├── gstr1.ts           # Byte-exact GSTR-1 JSON & Excel builder
 │       ├── gstr2b.ts          # GSTR-2B Excel & CSV portal parser
 │       ├── match.ts           # Deterministic matching engine & §2.8 taxonomy

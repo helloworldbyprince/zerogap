@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CONFIG } from '@/lib/config';
+import { useLanguage } from '@/lib/LanguageContext';
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -54,6 +55,7 @@ interface MismatchCardData {
 }
 
 export default function PurchasesPage() {
+  const { lang } = useLanguage();
   const [purchaseFilesCount, setPurchaseFilesCount] = useState<number>(44);
   const [gstr2bFileName, setGstr2bFileName] = useState<string>('GSTR-2B_September_2026.xlsx');
   const [gstr2bRecordsCount, setGstr2bRecordsCount] = useState<number>(42);
@@ -62,6 +64,10 @@ export default function PurchasesPage() {
   const [whyRiskModalOpen, setWhyRiskModalOpen] = useState<boolean>(false);
   const [aiExplainModal, setAiExplainModal] = useState<MismatchCardData | null>(null);
   const [whyCardModal, setWhyCardModal] = useState<MismatchCardData | null>(null);
+
+  // Gemini streaming state per card
+  const [cardExplanations, setCardExplanations] = useState<Record<string, string>>({});
+  const [streamingCardId, setStreamingCardId] = useState<string | null>(null);
 
   // Reconciliation results state
   const [results, setResults] = useState<{
@@ -149,6 +155,67 @@ export default function PurchasesPage() {
         };
       }),
     }));
+  };
+
+  // Stream Gemini plain-language explanation directly into card via SSE
+  const handleStreamCardExplain = async (item: MismatchCardData) => {
+    setStreamingCardId(item.id);
+    setCardExplanations((prev) => ({ ...prev, [item.id]: '' }));
+
+    try {
+      const response = await fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            type: 'mismatch_card',
+            cause: item.cause,
+            supplierName: item.supplierName,
+            invoiceNumber: item.inum,
+            amountAtRisk: item.amountAtRisk,
+            booksTax: item.booksTax,
+            gstr2bTax: item.gstr2bTax,
+            lang,
+          },
+        }),
+      });
+
+      if (!response.body) throw new Error('ReadableStream not supported.');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.replace('data: ', '');
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.text) {
+                setCardExplanations((prev) => ({
+                  ...prev,
+                  [item.id]: (prev[item.id] || '') + parsed.text,
+                }));
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (err: any) {
+      toast.error('AI streaming error: ' + (err.message || 'Unknown'));
+    } finally {
+      setStreamingCardId(null);
+    }
   };
 
   // Filter items based on active tab
@@ -562,16 +629,28 @@ export default function PurchasesPage() {
                   </div>
                 </div>
 
+                {/* Streamed Gemini Flash Explanation */}
+                {cardExplanations[item.id] && (
+                  <div className="mt-3.5 p-3.5 rounded-xl bg-[#0B0E14] border border-[#232B36] text-xs text-[#ECEDEE] space-y-1.5 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-1.5 text-[#F5A524] font-semibold text-[11px]">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Gemini 2.0 Flash Plain-Language Audit:
+                    </div>
+                    <p className="leading-relaxed">{cardExplanations[item.id]}</p>
+                  </div>
+                )}
+
                 {/* Card Footer: (Explain in simple words) button */}
                 <div className="mt-4 pt-3 border-t border-[#1A2029] flex justify-end">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setAiExplainModal(item)}
+                    disabled={streamingCardId === item.id}
+                    onClick={() => handleStreamCardExplain(item)}
                     className="text-xs border-[#232B36] hover:border-[#F5A524]/60 text-[#9BA1A6] hover:text-white flex items-center gap-1.5 cursor-pointer"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-[#F5A524]" />
-                    (Explain in simple words)
+                    {streamingCardId === item.id ? 'Thinking...' : '(Explain in simple words)'}
                   </Button>
                 </div>
               </Card>

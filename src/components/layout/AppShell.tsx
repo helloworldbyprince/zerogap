@@ -8,23 +8,18 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { CONFIG } from '@/lib/config';
 import { COPY, Language } from '@/lib/copy';
+import { LanguageProvider, useLanguage } from '@/lib/LanguageContext';
 import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, User } from '@/lib/firebase';
 import {
   BarChart3,
   Calendar,
-  CheckCircle2,
   ChevronDown,
-  FileSpreadsheet,
   FileText,
   Home,
-  LogOut,
   Menu,
   Scale,
   Search,
   Settings,
-  ShieldAlert,
-  Sparkles,
-  TrendingUp,
   User as UserIcon,
   X,
 } from 'lucide-react';
@@ -34,15 +29,13 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-export function AppShell({ children }: AppShellProps) {
+function AppShellInner({ children }: AppShellProps) {
   const pathname = usePathname();
-  const [lang, setLang] = useState<Language>('en');
+  const { lang, toggleLang, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(CONFIG.demo.businessName);
-  const [selectedPeriod, setSelectedPeriod] = useState(CONFIG.demo.periodLabel);
-
-  const t = COPY[lang];
+  const [selectedBusiness] = useState(CONFIG.demo.businessName);
+  const [selectedPeriod] = useState(CONFIG.demo.periodLabel);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -68,7 +61,7 @@ export function AppShell({ children }: AppShellProps) {
       name: t.nav.purchases,
       href: '/app/purchases',
       icon: Search,
-      dot: 'amber', // 94% match, 14 mismatches
+      dot: 'amber', // 94% match
     },
     {
       name: t.nav.triangle,
@@ -213,7 +206,7 @@ export function AppShell({ children }: AppShellProps) {
             {/* Hinglish Toggle Button (from §9.3 & §9.4) */}
             <button
               type="button"
-              onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
+              onClick={toggleLang}
               className="px-2.5 py-1 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-surface-2)] text-xs font-bold text-[var(--color-text)] hover:border-[var(--color-amber)] transition-colors cursor-pointer"
               title="Toggle English / Hinglish"
             >
@@ -255,7 +248,7 @@ export function AppShell({ children }: AppShellProps) {
         </main>
 
         {/* ─────────────────────────────────────────────────────────────
-            3. Mobile Bottom Tab Bar (Dashboard, Sales, Purchases, Triangle, More)
+            3. Mobile Bottom Tab Bar
         ────────────────────────────────────────────────────────────── */}
         <nav className="md:hidden sticky bottom-0 z-40 h-16 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur-md px-2 flex items-center justify-around">
           {[
@@ -283,5 +276,13 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
       </div>
     </div>
+  );
+}
+
+export function AppShell({ children }: AppShellProps) {
+  return (
+    <LanguageProvider>
+      <AppShellInner>{children}</AppShellInner>
+    </LanguageProvider>
   );
 }

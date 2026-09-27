@@ -11,6 +11,7 @@ const nextConfig = {
     '@google-cloud/documentai',
     '@google-cloud/storage',
     '@google-cloud/firestore',
+    '@google-cloud/vertexai',
     'google-gax',
   ],
   webpack: (config) => {

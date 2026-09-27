@@ -16,6 +16,7 @@
     "@google-cloud/documentai": "^10.1.0",
     "@google-cloud/firestore": "^9.2.0",
     "@google-cloud/storage": "^8.2.0",
+    "@google-cloud/vertexai": "^1.12.0",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-progress": "^1.1.16",
     "@radix-ui/react-select": "^2.3.7",
