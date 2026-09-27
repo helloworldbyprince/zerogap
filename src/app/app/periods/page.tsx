@@ -57,7 +57,7 @@ export default function PeriodsPage() {
       itcClaimed: 112000,
       gap: 0,
       status: 'green',
-      statusLabel: isHi ? 'सब सही ✓' : 'All clear ✓',
+      statusLabel: isHi ? 'सब सही' : 'All clear',
     },
     {
       period: '202608',
@@ -116,7 +116,7 @@ export default function PeriodsPage() {
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto pb-16">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#232B36] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E3E7EE] pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold text-[#F5A524] tracking-wider uppercase">
@@ -126,10 +126,10 @@ export default function PeriodsPage() {
               {isHi ? 'वित्तीय वर्ष:' : 'Financial Year:'} FY 2026–27
             </Badge>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-[#111418]">
             {isHi ? 'महीना, तिमाही, साल — एक नज़र में।' : 'Month, Quarter, Year — One View.'}
           </h1>
-          <p className="text-sm text-[#9BA1A6] mt-0.5">
+          <p className="text-sm text-[#5F6B7A] mt-0.5">
             {isHi
               ? 'BigQuery द्वारा संचालित ऐतिहासिक डेटा। 3 महीनों का टैक्स और इनपुट क्रेडिट ट्रेंड, जो GSTR-9 में काम आता है।'
               : 'Multi-period historical rollups powered by partitioned BigQuery tables. Feeds directly into your annual GSTR-9 filing.'}
@@ -138,26 +138,26 @@ export default function PeriodsPage() {
 
         <div className="flex items-center gap-2">
           <Link href="/app/triangle">
-            <Button variant="outline" size="sm" className="text-xs">
+            <Button variant="outline" size="sm" className="text-xs font-medium border-[#E3E7EE] text-[#111418] hover:bg-[#F6F7F9]">
               ← {isHi ? 'त्रिकोण जांच (F3)' : 'Triangle (F3)'}
             </Button>
           </Link>
           <Link href="/app/reports">
-            <Button variant="primary" size="sm" className="text-xs font-bold bg-[#F5A524] hover:bg-[#F5A524]/90 text-black">
-              {isHi ? 'रिपोर्ट्स डाउनलोड करें →' : 'Audit Reports →'}
+            <Button variant="primary" size="sm" className="text-xs font-medium bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#1A1A1A]">
+              {isHi ? 'रिपोर्ट्स देखें →' : 'Audit reports →'}
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Tabs: [Month] [Quarter] [Year] (§9.4 Wireframe Screen 6) */}
-      <div className="flex items-center gap-2 border-b border-[#232B36] pb-3">
+      <div className="flex items-center gap-2 border-b border-[#E3E7EE] pb-3">
         <button
           onClick={() => setActiveTab('month')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
             activeTab === 'month'
-              ? 'bg-[#F5A524] text-black shadow-sm'
-              : 'bg-[#12161F] text-[#9BA1A6] hover:text-white border border-[#232B36]'
+              ? 'bg-[#F5A524] text-[#1A1A1A] shadow-xs'
+              : 'bg-white text-[#5F6B7A] hover:text-[#111418] border border-[#E3E7EE]'
           }`}
         >
           {isHi ? 'मासिक (Month)' : 'Month'}
@@ -165,10 +165,10 @@ export default function PeriodsPage() {
 
         <button
           onClick={() => setActiveTab('quarter')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
             activeTab === 'quarter'
-              ? 'bg-[#F5A524] text-black shadow-sm'
-              : 'bg-[#12161F] text-[#9BA1A6] hover:text-white border border-[#232B36]'
+              ? 'bg-[#F5A524] text-[#1A1A1A] shadow-xs'
+              : 'bg-white text-[#5F6B7A] hover:text-[#111418] border border-[#E3E7EE]'
           }`}
         >
           {isHi ? 'तिमाही (Quarter)' : 'Quarter'}
@@ -176,10 +176,10 @@ export default function PeriodsPage() {
 
         <button
           onClick={() => setActiveTab('year')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
             activeTab === 'year'
-              ? 'bg-[#F5A524] text-black shadow-sm'
-              : 'bg-[#12161F] text-[#9BA1A6] hover:text-white border border-[#232B36]'
+              ? 'bg-[#F5A524] text-[#1A1A1A] shadow-xs'
+              : 'bg-white text-[#5F6B7A] hover:text-[#111418] border border-[#E3E7EE]'
           }`}
         >
           {isHi ? 'वार्षिक (Year)' : 'Year'}
@@ -188,9 +188,9 @@ export default function PeriodsPage() {
 
       {/* Year Tab Note (§9.4 Wireframe Screen 6) */}
       {activeTab === 'year' && (
-        <div className="p-3.5 rounded-[12px] bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-xs text-[#3B82F6] flex items-center gap-2.5 animate-in fade-in">
-          <Info className="h-4 w-4 flex-shrink-0" />
-          <p className="font-semibold">
+        <div className="p-3.5 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/30 text-xs text-[#111418] flex items-center gap-2.5 animate-in fade-in">
+          <Info className="h-4 w-4 text-[#F5A524] flex-shrink-0" />
+          <p className="font-medium">
             {isHi
               ? 'यह वार्षिक दृश्य सीधे आपके GSTR-9 वार्षिक रिटर्न में जाता है।'
               : 'This yearly view feeds your GSTR-9 annual return.'}
@@ -200,86 +200,87 @@ export default function PeriodsPage() {
 
       {/* KPI Row (§9.4 Wireframe Screen 6) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-4 shadow-sm">
-          <span className="text-[10px] uppercase font-bold text-[#9BA1A6] block tracking-wider">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-4 shadow-xs">
+          <span className="text-[11px] uppercase font-medium text-[#5F6B7A] block tracking-wider">
             Total sales tax
           </span>
-          <div className="text-xl sm:text-2xl font-black text-white mt-1">
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-[#111418] mt-1">
             ₹{totalSalesTax.toLocaleString('en-IN')}
           </div>
-          <span className="text-[10px] text-[#9BA1A6] mt-0.5 block">
+          <span className="text-[11px] text-[#5F6B7A] mt-0.5 block">
             Across {monthlyData.length} tax periods
           </span>
         </Card>
 
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-4 shadow-sm">
-          <span className="text-[10px] uppercase font-bold text-[#9BA1A6] block tracking-wider">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-4 shadow-xs">
+          <span className="text-[11px] uppercase font-medium text-[#5F6B7A] block tracking-wider">
             ITC available
           </span>
-          <div className="text-xl sm:text-2xl font-black text-[#17C964] mt-1">
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-[#17C964] mt-1">
             ₹{totalItcAvailable.toLocaleString('en-IN')}
           </div>
-          <span className="text-[10px] text-[#9BA1A6] mt-0.5 block">
+          <span className="text-[11px] text-[#5F6B7A] mt-0.5 block">
             From official 2B uploads
           </span>
         </Card>
 
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-4 shadow-sm">
-          <span className="text-[10px] uppercase font-bold text-[#9BA1A6] block tracking-wider">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-4 shadow-xs">
+          <span className="text-[11px] uppercase font-medium text-[#5F6B7A] block tracking-wider">
             ITC claimed
           </span>
-          <div className="text-xl sm:text-2xl font-black text-[#F31260] mt-1">
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-[#F31260] mt-1">
             ₹{totalItcClaimed.toLocaleString('en-IN')}
           </div>
-          <span className="text-[10px] text-[#9BA1A6] mt-0.5 block">
+          <span className="text-[11px] text-[#5F6B7A] mt-0.5 block">
             Self-assessed in 3B
           </span>
         </Card>
 
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-4 shadow-sm">
-          <span className="text-[10px] uppercase font-bold text-[#9BA1A6] block tracking-wider">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-4 shadow-xs">
+          <span className="text-[11px] uppercase font-medium text-[#5F6B7A] block tracking-wider">
             Gaps found
           </span>
-          <div className="text-xl sm:text-2xl font-black text-[#F5A524] mt-1">
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-[#F5A524] mt-1">
             {totalGapsFound} {totalGapsFound === 1 ? 'gap' : 'gaps'}
           </div>
-          <span className="text-[10px] text-[#9BA1A6] mt-0.5 block">
+          <span className="text-[11px] text-[#5F6B7A] mt-0.5 block">
             Monitored by Rule 88D
           </span>
         </Card>
       </div>
 
       {/* Trend Chart (recharts line chart) (§9.4 Wireframe Screen 6) */}
-      <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-5 shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#232B36] pb-3 mb-4">
+      <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 shadow-xs">
+        <div className="flex items-center justify-between border-b border-[#E3E7EE] pb-3 mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-[#F5A524]" />
-            <h3 className="font-bold text-sm text-white">
+            <h3 className="font-semibold text-sm text-[#111418]">
               {isHi
                 ? 'टैक्स देनदारी बनाम इनपुट क्रेडिट ट्रेंड (BigQuery)'
                 : 'Sales Tax vs ITC Claimed Across Periods'}
             </h3>
           </div>
-          <span className="text-[11px] text-[#9BA1A6]">Source: Partitioned BigQuery Rollup</span>
+          <span className="text-[11px] text-[#5F6B7A]">Source: Partitioned BigQuery Rollup</span>
         </div>
 
         <div className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#232B36" />
-              <XAxis dataKey="name" stroke="#9BA1A6" fontSize={11} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E3E7EE" />
+              <XAxis dataKey="name" stroke="#5F6B7A" fontSize={11} />
               <YAxis
-                stroke="#9BA1A6"
+                stroke="#5F6B7A"
                 fontSize={11}
                 tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#0B0E14',
-                  borderColor: '#232B36',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#E3E7EE',
                   borderRadius: 12,
                   fontSize: 12,
-                  color: '#fff',
+                  color: '#111418',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
                 }}
                 formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, '']}
               />
@@ -312,9 +313,9 @@ export default function PeriodsPage() {
       </Card>
 
       {/* Period Table (§9.4 Wireframe Screen 6) */}
-      <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] overflow-hidden shadow-sm">
-        <div className="p-4 bg-[#151B26] border-b border-[#232B36] flex items-center justify-between text-xs text-[#9BA1A6]">
-          <span className="font-bold text-white uppercase tracking-wider text-[11px]">
+      <Card className="rounded-[16px] border border-[#E3E7EE] bg-white overflow-hidden shadow-xs">
+        <div className="p-4 bg-[#F6F7F9] border-b border-[#E3E7EE] flex items-center justify-between text-xs text-[#5F6B7A]">
+          <span className="font-semibold text-[#111418] uppercase tracking-wider text-[11px]">
             {activeTab === 'month'
               ? 'Monthly Summary Table'
               : activeTab === 'quarter'
@@ -326,7 +327,7 @@ export default function PeriodsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-[#232B36] text-[#9BA1A6] uppercase text-[10px] tracking-wider bg-[#0B0E14]">
+            <thead className="border-b border-[#E3E7EE] text-[#5F6B7A] uppercase text-[11px] font-medium tracking-wider bg-[#F6F7F9]">
               <tr>
                 <th className="py-3 px-4">Period</th>
                 <th className="py-3 px-3 text-right">Sales Tax (₹)</th>
@@ -336,20 +337,20 @@ export default function PeriodsPage() {
                 <th className="py-3 px-4 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#232B36]">
+            <tbody className="divide-y divide-[#E3E7EE]">
               {activeTab === 'quarter' ? (
-                <tr className="hover:bg-[#161B22]">
-                  <td className="py-3 px-4 font-bold text-white">Q2 (Jul – Sep 2026)</td>
-                  <td className="py-3 px-3 text-right font-medium text-white">
+                <tr className="hover:bg-[#F6F7F9]">
+                  <td className="py-3 px-4 font-semibold text-[#111418]">Q2 (Jul – Sep 2026)</td>
+                  <td className="py-3 px-3 text-right font-medium tabular-nums text-[#111418]">
                     ₹{totalSalesTax.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-3 text-right text-[#17C964]">
+                  <td className="py-3 px-3 text-right tabular-nums text-[#17C964]">
                     ₹{totalItcAvailable.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-3 text-right text-[#F31260]">
+                  <td className="py-3 px-3 text-right tabular-nums text-[#F31260]">
                     ₹{totalItcClaimed.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-[#F5A524]">
+                  <td className="py-3 px-3 text-right tabular-nums font-semibold text-[#F5A524]">
                     ₹{(totalItcClaimed - totalItcAvailable).toLocaleString('en-IN')}
                   </td>
                   <td className="py-3 px-4 text-center">
@@ -359,18 +360,18 @@ export default function PeriodsPage() {
                   </td>
                 </tr>
               ) : activeTab === 'year' ? (
-                <tr className="hover:bg-[#161B22]">
-                  <td className="py-3 px-4 font-bold text-white">FY 2026–27 (Year-to-Date)</td>
-                  <td className="py-3 px-3 text-right font-medium text-white">
+                <tr className="hover:bg-[#F6F7F9]">
+                  <td className="py-3 px-4 font-semibold text-[#111418]">FY 2026–27 (Year-to-Date)</td>
+                  <td className="py-3 px-3 text-right font-medium tabular-nums text-[#111418]">
                     ₹{totalSalesTax.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-3 text-right text-[#17C964]">
+                  <td className="py-3 px-3 text-right tabular-nums text-[#17C964]">
                     ₹{totalItcAvailable.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-3 text-right text-[#F31260]">
+                  <td className="py-3 px-3 text-right tabular-nums text-[#F31260]">
                     ₹{totalItcClaimed.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-[#F5A524]">
+                  <td className="py-3 px-3 text-right tabular-nums font-semibold text-[#F5A524]">
                     ₹{(totalItcClaimed - totalItcAvailable).toLocaleString('en-IN')}
                   </td>
                   <td className="py-3 px-4 text-center">
@@ -381,18 +382,18 @@ export default function PeriodsPage() {
                 </tr>
               ) : (
                 monthlyData.map((row) => (
-                  <tr key={row.period} className="hover:bg-[#161B22]">
-                    <td className="py-3 px-4 font-semibold text-white">{row.periodLabel}</td>
-                    <td className="py-3 px-3 text-right font-mono text-white">
+                  <tr key={row.period} className="hover:bg-[#F6F7F9]">
+                    <td className="py-3 px-4 font-medium text-[#111418]">{row.periodLabel}</td>
+                    <td className="py-3 px-3 text-right tabular-nums text-[#111418]">
                       ₹{row.salesTax.toLocaleString('en-IN')}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-[#17C964]">
+                    <td className="py-3 px-3 text-right tabular-nums text-[#17C964]">
                       ₹{row.itcAvailable.toLocaleString('en-IN')}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-[#ECEDEE]">
+                    <td className="py-3 px-3 text-right tabular-nums text-[#111418]">
                       ₹{row.itcClaimed.toLocaleString('en-IN')}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-bold">
+                    <td className="py-3 px-3 text-right tabular-nums font-semibold">
                       {row.gap > 0 ? (
                         <span className="text-[#F31260]">₹{row.gap.toLocaleString('en-IN')}</span>
                       ) : (

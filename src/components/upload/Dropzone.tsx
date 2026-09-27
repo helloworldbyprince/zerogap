@@ -8,12 +8,12 @@ import { CONFIG } from '@/lib/config';
 import {
   UploadCloud,
   FileText,
-  CheckCircle2,
   AlertTriangle,
   Loader2,
   Sparkles,
   ArrowRight,
   Plus,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -137,7 +137,7 @@ export function Dropzone({
                     ...f,
                     progress: 100,
                     status: isWarning ? 'warning' : 'done',
-                    statusText: isWarning ? 'Needs review ⚠ (low confidence)' : 'Done ✓',
+                    statusText: isWarning ? 'Needs review (low confidence)' : 'Done',
                     confidence: isWarning ? 0.82 : 0.97,
                   }
                 : f
@@ -234,7 +234,7 @@ export function Dropzone({
                     ...f,
                     progress: 100,
                     status: isWarning ? 'warning' : 'done',
-                    statusText: isWarning ? 'Needs review ⚠ (low confidence)' : 'Done ✓',
+                    statusText: isWarning ? 'Needs review (low confidence)' : 'Done',
                     confidence: isWarning ? 0.81 : 0.98,
                   }
                 : f
@@ -266,8 +266,8 @@ export function Dropzone({
         className={cn(
           'relative flex flex-col items-center justify-center p-8 sm:p-12 rounded-[16px] border-2 border-dashed transition-all cursor-pointer text-center select-none',
           isDragging
-            ? 'border-[#F5A524] bg-[#F5A524]/10 scale-[1.005]'
-            : 'border-[#232B36] bg-[#11141A] hover:border-[#384150] hover:bg-[#161B22]'
+            ? 'border-[#F5A524] bg-[#FDF6E4] scale-[1.005]'
+            : 'border-[#CBD2DE] bg-white hover:border-[#F5A524] hover:bg-[#FDF6E4]/30 shadow-xs'
         )}
       >
         <input
@@ -279,15 +279,15 @@ export function Dropzone({
           className="hidden"
         />
 
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1A2029] border border-[#232B36] mb-4 text-[#F5A524]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FDF6E4] border border-[#F5A524]/20 mb-4 text-[#F5A524]">
           <UploadCloud className="h-7 w-7" />
         </div>
 
-        <h3 className="text-base sm:text-lg font-semibold text-[#ECEDEE] mb-1">
+        <h3 className="text-base sm:text-lg font-medium text-[#111418] mb-1">
           Drop sales bills here (PDF / JPG / PNG)
         </h3>
-        <p className="text-sm text-[#9BA1A6] max-w-md mb-4">
-          or <span className="text-[#F5A524] font-medium hover:underline">browse files</span> from your computer · up to {CONFIG.uploads.maxFiles} files, {CONFIG.uploads.maxFileMB}MB each
+        <p className="text-sm text-[#5F6B7A] max-w-md mb-4">
+          or <span className="text-[#9E6400] font-medium hover:underline">browse files</span> from your computer · up to {CONFIG.uploads.maxFiles} files, {CONFIG.uploads.maxFileMB}MB each
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -300,10 +300,10 @@ export function Dropzone({
         </div>
       </div>
 
-      {/* Quick Action Strip */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-[12px] bg-[#161B22] border border-[#232B36]">
-        <div className="flex items-center gap-3 text-sm text-[#ECEDEE]">
-          <Sparkles className="h-4 w-4 text-[#F5A524]" />
+      {/* Quick Action Strip (Warm Cream Panel §9.1) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/25 shadow-xs">
+        <div className="flex items-center gap-3 text-sm text-[#111418]">
+          <Sparkles className="h-4 w-4 text-[#F5A524] shrink-0" />
           <span>Need sample test bills to evaluate Document AI?</span>
         </div>
         <Button
@@ -312,7 +312,7 @@ export function Dropzone({
           size="sm"
           onClick={handleSimulateSampleUpload}
           disabled={isProcessing}
-          className="border-[#F5A524]/30 text-[#F5A524] hover:bg-[#F5A524]/10 shrink-0"
+          className="border-[#F5A524]/40 text-[#9E6400] hover:bg-[#F5A524]/10 bg-white shrink-0 font-medium"
         >
           {isProcessing ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -327,7 +327,7 @@ export function Dropzone({
       {files.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-[#ECEDEE] flex items-center gap-2">
+            <h4 className="text-sm font-medium text-[#111418] flex items-center gap-2">
               <span>Job Progress</span>
               <Badge variant="neutral" className="text-[11px]">
                 {files.filter((f) => f.progress === 100).length} / {files.length} Done
@@ -337,7 +337,9 @@ export function Dropzone({
               <Button
                 type="button"
                 onClick={onComplete}
-                className="bg-[#F5A524] hover:bg-[#D98E18] text-black font-semibold text-xs h-8 px-3"
+                variant="primary"
+                size="sm"
+                className="text-xs h-8 px-3 font-medium"
               >
                 Proceed to Review Table
                 <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
@@ -345,39 +347,41 @@ export function Dropzone({
             )}
           </div>
 
-          <div className="divide-y divide-[#232B36] rounded-[12px] border border-[#232B36] bg-[#11141A] overflow-hidden">
+          <div className="divide-y divide-[#E3E7EE] rounded-[12px] border border-[#E3E7EE] bg-white overflow-hidden shadow-xs">
             {files.map((file) => (
               <div key={file.id} className="p-3.5 sm:p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs sm:text-sm">
                   <div className="flex items-center gap-2.5 truncate max-w-[65%]">
-                    <FileText className="h-4 w-4 text-[#9BA1A6] shrink-0" />
-                    <span className="font-medium text-[#ECEDEE] truncate">{file.name}</span>
-                    <span className="text-[11px] text-[#9BA1A6] hidden sm:inline">
+                    <FileText className="h-4 w-4 text-[#5F6B7A] shrink-0" />
+                    <span className="font-medium text-[#111418] truncate">{file.name}</span>
+                    <span className="text-[11px] text-[#5F6B7A] hidden sm:inline">
                       ({(file.size / 1024).toFixed(0)} KB)
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {file.status === 'uploading' && (
-                      <span className="text-xs text-[#9BA1A6] flex items-center gap-1.5">
-                        <Loader2 className="h-3 w-3 animate-spin text-[#9BA1A6]" />
+                      <span className="text-xs text-[#5F6B7A] flex items-center gap-1.5">
+                        <Loader2 className="h-3 w-3 animate-spin text-[#5F6B7A]" />
                         {file.statusText}
                       </span>
                     )}
                     {file.status === 'parsing' && (
-                      <span className="text-xs text-[#F5A524] flex items-center gap-1.5">
+                      <span className="text-xs text-[#9E6400] flex items-center gap-1.5 font-medium">
                         <Loader2 className="h-3 w-3 animate-spin text-[#F5A524]" />
                         {file.statusText}
                       </span>
                     )}
                     {file.status === 'warning' && (
-                      <Badge variant="amber" dot className="text-xs">
-                        Needs review ⚠
+                      <Badge variant="amber" className="text-xs flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Needs review
                       </Badge>
                     )}
                     {file.status === 'done' && (
-                      <Badge variant="emerald" dot className="text-xs">
-                        Done ✓
+                      <Badge variant="emerald" className="text-xs flex items-center gap-1">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                        Done
                       </Badge>
                     )}
                   </div>

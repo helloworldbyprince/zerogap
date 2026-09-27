@@ -16,23 +16,23 @@ export function LandingFaq() {
         return (
           <div
             key={item.q}
-            className="rounded-[16px] border border-[#232B36] bg-[#12161D] overflow-hidden transition-colors"
+            className="rounded-[16px] border border-[#E3E7EE] bg-white overflow-hidden transition-colors"
           >
             <button
               type="button"
               onClick={() => setOpenIndex(isOpen ? null : idx)}
-              className="w-full flex items-center justify-between p-5 text-left text-sm sm:text-base font-semibold text-[#ECEDEE] hover:text-[#F5A524] transition-colors"
+              className="w-full flex items-center justify-between p-5 text-left text-sm sm:text-base font-medium text-[#111418] hover:text-[#F5A524] transition-colors cursor-pointer"
             >
               <span>{item.q}</span>
               <ChevronDown
                 className={cn(
-                  'h-5 w-5 text-[#9BA1A6] transition-transform duration-200 shrink-0 ml-4',
+                  'h-5 w-5 text-[#5F6B7A] transition-transform duration-200 shrink-0 ml-4',
                   isOpen && 'rotate-180 text-[#F5A524]'
                 )}
               />
             </button>
             {isOpen && (
-              <div className="px-5 pb-5 pt-0 text-sm text-[#9BA1A6] leading-relaxed border-t border-[#232B36]/40 mt-1 pt-3">
+              <div className="px-5 pb-5 pt-0 text-sm text-[#5F6B7A] leading-relaxed border-t border-[#E3E7EE] mt-1 pt-3">
                 {item.a}
               </div>
             )}

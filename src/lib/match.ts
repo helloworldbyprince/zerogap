@@ -242,7 +242,7 @@ export function runReconciliation(
       supplierName: pName,
       cause: 'MATCHED',
       severity: 'green',
-      causeLabel: 'Matched with 2B ✓',
+      causeLabel: 'Matched with 2B',
       booksTxval: pTxval,
       booksTax: pTax,
       gstr2bTxval: matched2b.txval,

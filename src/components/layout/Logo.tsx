@@ -13,7 +13,7 @@ export function Logo({ href = '/', className, size = 'md' }: LogoProps) {
     <div className={cn('inline-flex items-center gap-2.5 select-none group', className)}>
       <div
         className={cn(
-          'relative flex items-center justify-center rounded-[8px] bg-[#F5A524] transition-transform duration-200 group-hover:scale-105 shadow-sm',
+          'relative flex items-center justify-center rounded-[8px] bg-[#F5A524] transition-transform duration-200 group-hover:scale-105 shadow-xs',
           size === 'sm' && 'h-6 w-6 rounded-[6px]',
           size === 'md' && 'h-8 w-8 rounded-[8px]',
           size === 'lg' && 'h-10 w-10 rounded-[10px]'
@@ -22,7 +22,7 @@ export function Logo({ href = '/', className, size = 'md' }: LogoProps) {
         {/* Gap Mark: Zero / Ø stylized icon */}
         <span
           className={cn(
-            'font-black text-[#0A0C10] leading-none',
+            'font-black text-[#1A1A1A] leading-none',
             size === 'sm' && 'text-xs',
             size === 'md' && 'text-sm',
             size === 'lg' && 'text-base'
@@ -33,7 +33,7 @@ export function Logo({ href = '/', className, size = 'md' }: LogoProps) {
       </div>
       <span
         className={cn(
-          'font-extrabold tracking-tight text-[#ECEDEE] font-sans',
+          'font-semibold tracking-tight text-[#111418] font-sans',
           size === 'sm' && 'text-base',
           size === 'md' && 'text-xl',
           size === 'lg' && 'text-2xl'

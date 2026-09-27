@@ -97,7 +97,7 @@ export interface RollupResult {
  */
 export async function getHistoricalRollups(bizId: string): Promise<RollupResult> {
   // 3 months of historical data per §14:
-  // - July 2026: Clean month (emerald 'All clear ✓' state)
+  // - July 2026: Clean month (emerald 'All clear' state)
   // - August 2026: 1 minor value mismatch
   // - September 2026: Active demo month (₹1,84,200 at risk, 1 credit gap of ₹2,300)
   const monthly: PeriodSummary[] = [
@@ -109,7 +109,7 @@ export async function getHistoricalRollups(bizId: string): Promise<RollupResult>
       itcClaimed: 112000,
       gap: 0,
       status: 'green',
-      statusLabel: 'All clear ✓',
+      statusLabel: 'All clear',
     },
     {
       period: '202608',

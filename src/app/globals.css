@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0A0C10;
-  --color-surface: #12161D;
-  --color-surface-2: #1A2029;
-  --color-border: #232B36;
+  --color-bg: #F6F7F9;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F0F2F5;
+  --color-border: #E3E7EE;
   --color-amber: #F5A524;
+  --color-amber-dark: #1A1A1A;
   --color-emerald: #17C964;
   --color-red: #F31260;
-  --color-blue: #3B82F6;
-  --color-text: #ECEDEE;
-  --color-muted: #9BA1A6;
+  --color-blue: #2563EB;
+  --color-cream: #FDF6E4;
+  --color-text: #111418;
+  --color-muted: #5F6B7A;
 
-  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: var(--font-lexend), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background-color: var(--color-bg, #0A0C10);
-  color: var(--color-text, #ECEDEE);
+  background-color: var(--color-bg, #F6F7F9);
+  color: var(--color-text, #111418);
   font-family: var(--font-sans);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -33,7 +35,7 @@ body {
 }
 
 .card-shadow {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 
 /* Custom scrollbar */
@@ -42,12 +44,12 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0A0C10;
+  background: #F6F7F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #232B36;
+  background: #E3E7EE;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B4856;
+  background: #CBD2DE;
 }

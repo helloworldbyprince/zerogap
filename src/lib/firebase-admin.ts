@@ -636,7 +636,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: "Supplier didn't file this bill",
       amountAtRisk: 10440,
       whatHappened: "Sharma Traders' INV-104 (₹58,000) is in your books but missing from your GSTR-2B.",
-      moneyInvolved: "₹10,440 of tax credit at risk (Why? ⓘ)",
+      moneyInvolved: "₹10,440 of tax credit at risk (Why?)",
       whyItMatters: "You can only claim credit for bills your supplier actually filed. Until they file, this ₹10,440 is blocked.",
       actions: [
         { id: '1', text: 'Call Sharma Traders — ask them to file GSTR-1', checked: true },
@@ -656,7 +656,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: "Supplier didn't file this bill",
       amountAtRisk: 18000,
       whatHappened: "Kalyan Hardware's INV-118 (₹1,00,000) is in your books but missing from your GSTR-2B.",
-      moneyInvolved: "₹18,000 of tax credit at risk (Why? ⓘ)",
+      moneyInvolved: "₹18,000 of tax credit at risk (Why?)",
       whyItMatters: "Supplier missed the monthly GSTR-1 cutoff date. Credit cannot be claimed in GSTR-3B this month.",
       actions: [
         { id: '1', text: 'Send formal reminder notice to supplier finance team', checked: false },
@@ -676,7 +676,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: "Supplier didn't file this bill",
       amountAtRisk: 144000,
       whatHappened: "Metro Tech's high-value capital bill INV-132 (₹8,00,000) was not reported in their outward GSTR-1.",
-      moneyInvolved: "₹1,44,000 large tax credit blocked (Why? ⓘ)",
+      moneyInvolved: "₹1,44,000 large tax credit blocked (Why?)",
       whyItMatters: "High value gap will immediately trigger automated DRC-01C notice under Rule 88D if claimed in 3B.",
       actions: [
         { id: '1', text: 'Hold pending supplier payment until GSTR-1 filing ARN is provided', checked: true },
@@ -702,7 +702,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: 'Tax value mismatch between books and 2B',
       amountAtRisk: 5400,
       whatHappened: "For INV-108, your books record ₹32,400 tax, but GSTR-2B only shows ₹27,000.",
-      moneyInvolved: "₹5,400 excess credit in books (Why? ⓘ)",
+      moneyInvolved: "₹5,400 excess credit in books (Why?)",
       whyItMatters: "Supplier likely excluded post-sale freight/packing charges in their uploaded return.",
       actions: [
         { id: '1', text: 'Request debit note from supplier for ₹30,000 differential taxable value', checked: true },
@@ -724,7 +724,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: 'Tax value mismatch between books and 2B',
       amountAtRisk: 2700,
       whatHappened: "Your books reflect ₹14,400 tax for logistics bill INV-115, but 2B reflects ₹11,700.",
-      moneyInvolved: "₹2,700 differential ITC (Why? ⓘ)",
+      moneyInvolved: "₹2,700 differential ITC (Why?)",
       whyItMatters: "Claiming ₹14,400 without matching 2B triggers red flag under Rule 88D.",
       actions: [
         { id: '1', text: 'Reconcile consignment weight slip against billed invoice', checked: false },
@@ -746,7 +746,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: 'Tax value mismatch between books and 2B',
       amountAtRisk: 3600,
       whatHappened: "United Steel entered ₹1,00,000 on portal instead of full invoice value of ₹1,20,000.",
-      moneyInvolved: "₹3,600 tax credit discrepancy (Why? ⓘ)",
+      moneyInvolved: "₹3,600 tax credit discrepancy (Why?)",
       whyItMatters: "Credit difference will block matching during automated annual audit.",
       actions: [
         { id: '1', text: 'Obtain copy of supplier GSTR-1 filing summary', checked: false },
@@ -768,7 +768,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: 'Rounding difference in tax',
       amountAtRisk: 60,
       whatHappened: "Rounding difference of ₹60 between internal software and supplier portal entry.",
-      moneyInvolved: "₹60 minor variance (Why? ⓘ)",
+      moneyInvolved: "₹60 minor variance (Why?)",
       whyItMatters: "Within statutory round-off limits, but recommended to align.",
       actions: [
         { id: '1', text: 'Accept supplier rounded figure of ₹8,940', checked: true },
@@ -793,7 +793,7 @@ function seedDemoPurchasesAnd2B() {
       causeLabel: 'In GSTR-2B but missing in your books',
       amountAtRisk: 0,
       whatHappened: "Global Cable Corporation uploaded bill INV-208 with ₹8,500 ITC, but it is not booked in your accounts.",
-      moneyInvolved: "₹8,500 unclaimed tax credit available to you! (Why? ⓘ)",
+      moneyInvolved: "₹8,500 unclaimed tax credit available to you! (Why?)",
       whyItMatters: "You are entitled to claim this credit to reduce your monthly tax cash payout.",
       actions: [
         { id: '1', text: 'Confirm receipt of goods/services with warehouse manager', checked: false },

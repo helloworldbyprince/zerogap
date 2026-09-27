@@ -1,7 +1,15 @@
 import type { Metadata } from 'next';
+import { Lexend } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'sonner';
 import { CONFIG } from '@/lib/config';
+
+const lexend = Lexend({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-lexend',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: `${CONFIG.app.name} · ${CONFIG.app.tagline}`,
@@ -26,29 +34,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-screen bg-[#0A0C10] text-[#ECEDEE] antialiased selection:bg-[#F5A524] selection:text-black">
+    <html lang="en" className={lexend.variable}>
+      <body className="min-h-screen bg-[#F6F7F9] text-[#111418] antialiased selection:bg-[#F5A524] selection:text-[#1A1A1A] font-sans">
         {children}
         <Toaster
           position="top-right"
           toastOptions={{
             style: {
-              background: '#12161D',
-              border: '1px solid #232B36',
-              color: '#ECEDEE',
+              background: '#FFFFFF',
+              border: '1px solid #E3E7EE',
+              color: '#111418',
               borderRadius: '12px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+              fontFamily: 'var(--font-lexend)',
             },
           }}
         />

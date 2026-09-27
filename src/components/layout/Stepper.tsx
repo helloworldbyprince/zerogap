@@ -24,7 +24,7 @@ export function Stepper({
   className,
 }: StepperProps) {
   return (
-    <div className={cn('w-full py-4', className)}>
+    <div className={cn('w-full py-3', className)}>
       <nav aria-label="Progress">
         <ol className="flex items-center justify-between">
           {steps.map((step, idx) => {
@@ -47,9 +47,9 @@ export function Stepper({
                   <span
                     className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all select-none',
-                      isCompleted && 'bg-[#17C964] text-black font-bold shadow-sm',
-                      isCurrent && 'bg-[#F5A524] text-black font-bold ring-4 ring-[#F5A524]/20 shadow-md',
-                      isUpcoming && 'border border-[#232B36] bg-[#161B22] text-[#9BA1A6]'
+                      isCompleted && 'bg-[#17C964] text-white shadow-xs',
+                      isCurrent && 'bg-[#F5A524] text-[#1A1A1A] ring-4 ring-[#F5A524]/20 shadow-xs',
+                      isUpcoming && 'border border-[#E3E7EE] bg-[#F0F2F5] text-[#5F6B7A]'
                     )}
                   >
                     {isCompleted ? <Check className="h-4 w-4 stroke-[3]" /> : idx + 1}
@@ -59,16 +59,16 @@ export function Stepper({
                   <div className="flex flex-col">
                     <span
                       className={cn(
-                        'text-sm font-medium transition-colors',
-                        isCurrent && 'text-[#ECEDEE] font-semibold',
-                        isCompleted && 'text-[#ECEDEE]',
-                        isUpcoming && 'text-[#9BA1A6]'
+                        'text-sm transition-colors',
+                        isCurrent && 'text-[#111418] font-semibold',
+                        isCompleted && 'text-[#111418] font-medium',
+                        isUpcoming && 'text-[#5F6B7A]'
                       )}
                     >
                       {step.label}
                     </span>
                     {step.sublabel && (
-                      <span className="text-[11px] text-[#9BA1A6] hidden sm:block">
+                      <span className="text-[11px] text-[#5F6B7A] hidden sm:block">
                         {step.sublabel}
                       </span>
                     )}
@@ -80,7 +80,7 @@ export function Stepper({
                   <div
                     className={cn(
                       'hidden sm:block h-[2px] flex-1 mx-4 transition-colors',
-                      idx < currentStepIndex ? 'bg-[#17C964]' : 'bg-[#232B36]'
+                      idx < currentStepIndex ? 'bg-[#17C964]' : 'bg-[#E3E7EE]'
                     )}
                     aria-hidden="true"
                   />

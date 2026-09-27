@@ -92,7 +92,7 @@ function OnboardingContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col justify-between p-6">
+    <div className="min-h-screen bg-[#F6F7F9] text-[#111418] flex flex-col justify-between p-6">
       {/* Top Header */}
       <header className="mx-auto w-full max-w-xl flex items-center justify-between py-4">
         <Logo href="/" size="md" />
@@ -102,10 +102,10 @@ function OnboardingContent() {
               key={s}
               className={`h-2 rounded-full transition-all duration-300 ${
                 s === step
-                  ? 'w-8 bg-[var(--color-amber)]'
+                  ? 'w-8 bg-[#F5A524]'
                   : s < step
-                  ? 'w-2 bg-[var(--color-emerald)]'
-                  : 'w-2 bg-[var(--color-border)]'
+                  ? 'w-2 bg-[#17C964]'
+                  : 'w-2 bg-[#E3E7EE]'
               }`}
             />
           ))}
@@ -114,43 +114,43 @@ function OnboardingContent() {
 
       {/* Main Stepper Card */}
       <main className="mx-auto w-full max-w-xl my-auto">
-        <Card className="rounded-[18px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl p-8">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white shadow-xs p-8">
           <CardContent className="p-0 space-y-6">
             {/* Step 1: Business Details */}
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9E6400]">
                     Step 1 of 3
                   </span>
-                  <h1 className="text-2xl font-extrabold text-[var(--color-text)] mt-1">
-                    Your Business
+                  <h1 className="text-[21px] font-semibold text-[#111418] mt-1">
+                    Your business
                   </h1>
-                  <p className="text-sm text-[var(--color-muted)] mt-1">
+                  <p className="text-sm text-[#5F6B7A] mt-1">
                     Enter your GST profile to automatically calibrate HSN digit checks.
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[var(--color-text)] mb-1.5">
-                      Business Name
+                    <label className="block text-xs font-medium text-[#111418] mb-1.5">
+                      Business name
                     </label>
                     <input
                       type="text"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
                       placeholder="e.g. Sharma Traders"
-                      className="w-full h-11 px-4 rounded-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-amber)]"
+                      className="w-full h-11 px-4 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-sm text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white transition-colors"
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-[var(--color-text)]">
+                      <label className="block text-xs font-medium text-[#111418]">
                         GSTIN
                       </label>
-                      <span className="text-[11px] text-[var(--color-muted)]">15-digit alphanumeric</span>
+                      <span className="text-[11px] text-[#5F6B7A]">15-digit alphanumeric</span>
                     </div>
                     <input
                       type="text"
@@ -158,27 +158,27 @@ function OnboardingContent() {
                       onChange={(e) => setGstin(e.target.value.toUpperCase())}
                       onBlur={(e) => validateGstin(e.target.value)}
                       placeholder="06ABCDE1234F1Z5"
-                      className={`w-full h-11 px-4 rounded-[12px] bg-[var(--color-surface-2)] border ${
-                        gstinError ? 'border-[var(--color-red)]' : 'border-[var(--color-border)]'
-                      } text-sm font-mono text-[var(--color-text)] focus:outline-none focus:border-[var(--color-amber)]`}
+                      className={`w-full h-11 px-4 rounded-[12px] bg-[#F6F7F9] border ${
+                        gstinError ? 'border-[#F31260]' : 'border-[#E3E7EE]'
+                      } text-sm font-mono text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white uppercase transition-colors`}
                     />
                     {gstinError && (
-                      <p className="text-xs text-[var(--color-red)] mt-1">{gstinError}</p>
+                      <p className="text-xs text-[#F31260] mt-1">{gstinError}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--color-text)] mb-1.5">
+                      <label className="block text-xs font-medium text-[#111418] mb-1.5">
                         State
                       </label>
                       <select
                         value={stateCode}
                         onChange={(e) => setStateCode(e.target.value)}
-                        className="w-full h-11 px-3 rounded-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-amber)]"
+                        className="w-full h-11 px-3 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-sm text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white transition-colors"
                       >
                         {INDIAN_STATES.map((s) => (
-                          <option key={s.code} value={s.code} className="bg-[#12161D]">
+                          <option key={s.code} value={s.code} className="bg-white text-[#111418]">
                             {s.name}
                           </option>
                         ))}
@@ -186,17 +186,17 @@ function OnboardingContent() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--color-text)] mb-1.5">
-                        Yearly Turnover
+                      <label className="block text-xs font-medium text-[#111418] mb-1.5">
+                        Yearly turnover
                       </label>
                       <div className="flex items-center gap-2 h-11">
                         <button
                           type="button"
                           onClick={() => setTurnoverSlab('UNDER_5CR')}
-                          className={`flex-1 h-full rounded-[10px] text-xs font-semibold border transition-all ${
+                          className={`flex-1 h-full rounded-[12px] text-xs font-medium border transition-all cursor-pointer ${
                             turnoverSlab === 'UNDER_5CR'
-                              ? 'bg-[var(--color-amber)]/15 border-[var(--color-amber)] text-[var(--color-amber)]'
-                              : 'bg-[var(--color-surface-2)] border-[var(--color-border)] text-[var(--color-muted)]'
+                              ? 'bg-[#FDF6E4] border-[#F5A524] text-[#9E6400] font-semibold'
+                              : 'bg-[#F6F7F9] border-[#E3E7EE] text-[#5F6B7A] hover:text-[#111418]'
                           }`}
                         >
                           Under ₹5 cr
@@ -204,10 +204,10 @@ function OnboardingContent() {
                         <button
                           type="button"
                           onClick={() => setTurnoverSlab('OVER_5CR')}
-                          className={`flex-1 h-full rounded-[10px] text-xs font-semibold border transition-all ${
+                          className={`flex-1 h-full rounded-[12px] text-xs font-medium border transition-all cursor-pointer ${
                             turnoverSlab === 'OVER_5CR'
-                              ? 'bg-[var(--color-amber)]/15 border-[var(--color-amber)] text-[var(--color-amber)]'
-                              : 'bg-[var(--color-surface-2)] border-[var(--color-border)] text-[var(--color-muted)]'
+                              ? 'bg-[#FDF6E4] border-[#F5A524] text-[#9E6400] font-semibold'
+                              : 'bg-[#F6F7F9] border-[#E3E7EE] text-[#5F6B7A] hover:text-[#111418]'
                           }`}
                         >
                           Over ₹5 cr
@@ -217,10 +217,10 @@ function OnboardingContent() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)]">
+                <div className="flex items-center justify-between pt-4 border-t border-[#E3E7EE]">
                   <Link
                     href="/app"
-                    className="text-xs font-semibold text-[var(--color-muted)] hover:underline"
+                    className="text-xs font-medium text-[#5F6B7A] hover:underline"
                   >
                     Skip for now
                   </Link>
@@ -229,6 +229,7 @@ function OnboardingContent() {
                     onClick={handleStep1Continue}
                     variant="primary"
                     size="default"
+                    className="font-medium shadow-xs"
                   >
                     Continue
                     <ArrowRight className="h-4 w-4 ml-1" />
@@ -241,40 +242,40 @@ function OnboardingContent() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9E6400]">
                     Step 2 of 3
                   </span>
-                  <h1 className="text-2xl font-extrabold text-[var(--color-text)] mt-1">
-                    Filing Period
+                  <h1 className="text-[21px] font-semibold text-[#111418] mt-1">
+                    Filing period
                   </h1>
-                  <p className="text-sm text-[var(--color-muted)] mt-1">
+                  <p className="text-sm text-[#5F6B7A] mt-1">
                     Select the tax period for sales export and 2B credit reconciliation.
                   </p>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-xs font-semibold text-[var(--color-text)]">
-                    Return Period
+                  <label className="block text-xs font-medium text-[#111418]">
+                    Return period
                   </label>
                   <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value)}
-                    className="w-full h-12 px-4 rounded-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-amber)]"
+                    className="w-full h-12 px-4 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-sm font-semibold text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white transition-colors"
                   >
-                    <option value="202609" className="bg-[#12161D]">September 2026 (Active Due Period)</option>
-                    <option value="202608" className="bg-[#12161D]">August 2026</option>
-                    <option value="202607" className="bg-[#12161D]">July 2026</option>
+                    <option value="202609" className="bg-white text-[#111418]">September 2026 (Active Due Period)</option>
+                    <option value="202608" className="bg-white text-[#111418]">August 2026</option>
+                    <option value="202607" className="bg-white text-[#111418]">July 2026</option>
                   </select>
-                  <p className="text-xs text-[var(--color-muted)]">
+                  <p className="text-xs text-[#5F6B7A]">
                     GSTR-1 is due on the 11th; 2B auto-generates around the 14th; GSTR-3B is due on the 20th.
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)]">
+                <div className="flex items-center justify-between pt-4 border-t border-[#E3E7EE]">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="text-xs font-semibold text-[var(--color-muted)] hover:underline flex items-center gap-1"
+                    className="text-xs font-medium text-[#5F6B7A] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back
@@ -284,6 +285,7 @@ function OnboardingContent() {
                     onClick={() => setStep(3)}
                     variant="primary"
                     size="default"
+                    className="font-medium shadow-xs"
                   >
                     Continue
                     <ArrowRight className="h-4 w-4 ml-1" />
@@ -296,13 +298,13 @@ function OnboardingContent() {
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-amber)]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9E6400]">
                     Step 3 of 3
                   </span>
-                  <h1 className="text-2xl font-extrabold text-[var(--color-text)] mt-1">
-                    Get Data In
+                  <h1 className="text-[21px] font-semibold text-[#111418] mt-1">
+                    Get data in
                   </h1>
-                  <p className="text-sm text-[var(--color-muted)] mt-1">
+                  <p className="text-sm text-[#5F6B7A] mt-1">
                     Choose how you want to start exploring ZeroGap.
                   </p>
                 </div>
@@ -311,23 +313,23 @@ function OnboardingContent() {
                   {/* Demo Data Option (Preselected for judges) */}
                   <div
                     onClick={() => handleFinishOnboarding(true)}
-                    className="group relative rounded-[14px] border-2 border-[var(--color-amber)] bg-[var(--color-surface-2)] p-5 cursor-pointer hover:scale-[1.01] transition-all"
+                    className="group relative rounded-[16px] border-2 border-[#F5A524] bg-[#FDF6E4] p-5 cursor-pointer shadow-xs hover:border-[#D98E18] transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-[10px] bg-[var(--color-amber)]/20 text-[var(--color-amber)]">
+                        <div className="p-2.5 rounded-[12px] bg-white border border-[#F5A524]/30 text-[#F5A524] shadow-xs">
                           <Sparkles className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-sm text-[var(--color-text)]">
-                            Load demo data — 1 click (Recommended for Judges)
+                          <h3 className="font-semibold text-sm text-[#111418]">
+                            Load demo data — 1 click (Recommended for judges)
                           </h3>
-                          <p className="text-xs text-[var(--color-muted)] mt-0.5">
+                          <p className="text-xs text-[#5F6B7A] mt-0.5">
                             Pre-loads 24 sales bills, 45 purchase bills, GSTR-2B, and ₹1,84,200 simulated mismatch.
                           </p>
                         </div>
                       </div>
-                      <span className="text-[11px] font-bold text-[var(--color-amber)] bg-[var(--color-amber)]/10 px-2 py-0.5 rounded-full">
+                      <span className="text-[11px] font-semibold text-[#9E6400] bg-white px-2.5 py-0.5 rounded-full border border-[#F5A524]/30 shadow-xs">
                         Instant
                       </span>
                     </div>
@@ -336,18 +338,18 @@ function OnboardingContent() {
                   {/* Upload Own Bills Option */}
                   <div
                     onClick={() => handleFinishOnboarding(false)}
-                    className="group rounded-[14px] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-5 cursor-pointer hover:border-[var(--color-border)]/80 hover:scale-[1.01] transition-all"
+                    className="group rounded-[16px] border border-[#E3E7EE] bg-white p-5 cursor-pointer hover:border-[#CBD2DE] shadow-xs transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-[10px] bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)]">
+                        <div className="p-2.5 rounded-[12px] bg-[#F6F7F9] text-[#5F6B7A] border border-[#E3E7EE]">
                           <UploadCloud className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-sm text-[var(--color-text)]">
+                          <h3 className="font-medium text-sm text-[#111418]">
                             Upload my own bills
                           </h3>
-                          <p className="text-xs text-[var(--color-muted)] mt-0.5">
+                          <p className="text-xs text-[#5F6B7A] mt-0.5">
                             Start clean by dropping your company's sales or purchase PDF/photo invoices.
                           </p>
                         </div>
@@ -360,7 +362,7 @@ function OnboardingContent() {
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="text-xs font-semibold text-[var(--color-muted)] hover:underline flex items-center gap-1"
+                    className="text-xs font-medium text-[#5F6B7A] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back
@@ -373,7 +375,7 @@ function OnboardingContent() {
       </main>
 
       {/* Footer */}
-      <footer className="mx-auto w-full max-w-xl text-center py-4 text-xs text-[var(--color-muted)]">
+      <footer className="mx-auto w-full max-w-xl text-center py-4 text-xs text-[#5F6B7A]">
         ZeroGap · Team JalebiJS · AI Builder Cup 2026
       </footer>
     </div>
@@ -384,8 +386,8 @@ export default function OnboardingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center text-sm font-semibold text-[var(--color-muted)]">
-          Loading Onboarding...
+        <div className="min-h-screen bg-[#F6F7F9] flex items-center justify-center text-sm font-medium text-[#5F6B7A]">
+          Loading onboarding...
         </div>
       }
     >
@@ -393,4 +395,3 @@ export default function OnboardingPage() {
     </Suspense>
   );
 }
-

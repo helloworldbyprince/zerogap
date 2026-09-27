@@ -7,12 +7,12 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-[#1A2029] text-[#ECEDEE] border border-[#232B36]',
-        emerald: 'bg-[#17C964]/15 text-[#17C964] border border-[#17C964]/30',
-        amber: 'bg-[#F5A524]/15 text-[#F5A524] border border-[#F5A524]/30',
-        red: 'bg-[#F31260]/15 text-[#F31260] border border-[#F31260]/30',
-        blue: 'bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/30',
-        neutral: 'bg-[#1A2029] text-[#9BA1A6] border border-[#232B36]',
+        default: 'bg-[#F0F2F5] text-[#5F6B7A] border border-[#E3E7EE]',
+        emerald: 'bg-[#17C964]/10 text-[#0F8C43] border border-[#17C964]/25',
+        amber: 'bg-[#F5A524]/15 text-[#9E6400] border border-[#F5A524]/30',
+        red: 'bg-[#F31260]/10 text-[#C70E4E] border border-[#F31260]/25',
+        blue: 'bg-[#2563EB]/10 text-[#2563EB] border border-[#2563EB]/25',
+        neutral: 'bg-[#F0F2F5] text-[#5F6B7A] border border-[#E3E7EE]',
       },
     },
     defaultVariants: {
@@ -33,13 +33,13 @@ function Badge({ className, variant, dot = false, children, ...props }: BadgePro
       {dot && (
         <span
           className={cn(
-            'h-1.5 w-1.5 rounded-full',
+            'h-1.5 w-1.5 rounded-full shrink-0',
             variant === 'emerald' && 'bg-[#17C964]',
             variant === 'amber' && 'bg-[#F5A524]',
             variant === 'red' && 'bg-[#F31260]',
-            variant === 'blue' && 'bg-[#3B82F6]',
+            variant === 'blue' && 'bg-[#2563EB]',
             (!variant || variant === 'default' || variant === 'neutral') &&
-              'bg-[#9BA1A6]'
+              'bg-[#5F6B7A]'
           )}
         />
       )}

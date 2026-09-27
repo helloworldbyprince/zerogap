@@ -7,7 +7,6 @@ import { Logo } from '@/components/layout/Logo';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { CONFIG } from '@/lib/config';
-import { COPY, Language } from '@/lib/copy';
 import { LanguageProvider, useLanguage } from '@/lib/LanguageContext';
 import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, User } from '@/lib/firebase';
 import {
@@ -104,11 +103,11 @@ function AppShellInner({ children }: AppShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex transition-colors duration-200">
+    <div className="min-h-screen bg-[#F6F7F9] text-[#111418] flex font-sans">
       {/* ─────────────────────────────────────────────────────────────
           1. Desktop Sidebar (240px)
       ────────────────────────────────────────────────────────────── */}
-      <aside className="hidden md:flex w-[240px] flex-col justify-between border-r border-[var(--color-border)] bg-[var(--color-surface)] p-5 shrink-0 sticky top-0 h-screen transition-colors">
+      <aside className="hidden md:flex w-[240px] flex-col justify-between border-r border-[#E3E7EE] bg-white p-5 shrink-0 sticky top-0 h-screen">
         <div className="space-y-6">
           <div className="px-1 py-1">
             <Logo href="/app" size="sm" />
@@ -122,10 +121,10 @@ function AppShellInner({ children }: AppShellProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-[12px] text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-[12px] text-xs font-medium transition-all ${
                     active
-                      ? 'bg-[var(--color-surface-2)] text-[var(--color-amber)] border border-[var(--color-border)]'
-                      : 'text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)]'
+                      ? 'bg-[#FDF6E4] text-[#9E6400] border border-[#F5A524]/30 shadow-xs'
+                      : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F6F7F9]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -137,12 +136,12 @@ function AppShellInner({ children }: AppShellProps) {
                   <span
                     className={`h-2 w-2 rounded-full ${
                       item.dot === 'emerald'
-                        ? 'bg-[var(--color-emerald)]'
+                        ? 'bg-[#17C964]'
                         : item.dot === 'amber'
-                        ? 'bg-[var(--color-amber)]'
+                        ? 'bg-[#F5A524]'
                         : item.dot === 'red'
-                        ? 'bg-[var(--color-red)]'
-                        : 'bg-[var(--color-border)]'
+                        ? 'bg-[#F31260]'
+                        : 'bg-[#E3E7EE]'
                     }`}
                   />
                 </Link>
@@ -152,9 +151,9 @@ function AppShellInner({ children }: AppShellProps) {
         </div>
 
         {/* Sidebar Bottom / Help & Compliance Badge */}
-        <div className="pt-4 border-t border-[var(--color-border)] space-y-3">
-          <div className="p-3 rounded-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[11px] text-[var(--color-muted)]">
-            <p className="font-bold text-[var(--color-text)] mb-0.5">Rule 88D Compliance</p>
+        <div className="pt-4 border-t border-[#E3E7EE] space-y-3">
+          <div className="p-3 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-[11px] text-[#5F6B7A]">
+            <p className="font-semibold text-[#111418] mb-0.5">Rule 88D Compliance</p>
             <p>Next GSTR-1 due: {CONFIG.gstr1.dueDay}th of month</p>
           </div>
         </div>
@@ -165,13 +164,13 @@ function AppShellInner({ children }: AppShellProps) {
       ────────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* TopBar */}
-        <header className="sticky top-0 z-40 h-16 border-b border-[var(--color-border)] bg-[var(--color-surface)]/90 backdrop-blur-md px-6 flex items-center justify-between transition-colors">
+        <header className="sticky top-0 z-40 h-16 border-b border-[#E3E7EE] bg-white/95 backdrop-blur-md px-6 flex items-center justify-between">
           {/* Left: Mobile hamburger + Business Switcher */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-[8px] border border-[var(--color-border)] text-[var(--color-muted)]"
+              className="md:hidden p-2 rounded-[8px] border border-[#E3E7EE] text-[#5F6B7A]"
             >
               {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
@@ -180,11 +179,11 @@ function AppShellInner({ children }: AppShellProps) {
             <div className="relative">
               <button
                 type="button"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-amber)]/40 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-medium text-[#111418] hover:border-[#CBD2DE] transition-colors"
               >
-                <span className="h-2 w-2 rounded-full bg-[var(--color-emerald)]" />
+                <span className="h-2 w-2 rounded-full bg-[#17C964]" />
                 <span className="truncate max-w-[130px] sm:max-w-[200px]">{selectedBusiness}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-[var(--color-muted)]" />
+                <ChevronDown className="h-3.5 w-3.5 text-[#5F6B7A]" />
               </button>
             </div>
 
@@ -192,35 +191,34 @@ function AppShellInner({ children }: AppShellProps) {
             <div className="relative hidden sm:block">
               <button
                 type="button"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs font-semibold text-[var(--color-text)] hover:border-[var(--color-amber)]/40 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-medium text-[#111418] hover:border-[#CBD2DE] transition-colors"
               >
-                <Calendar className="h-3.5 w-3.5 text-[var(--color-amber)]" />
+                <Calendar className="h-3.5 w-3.5 text-[#F5A524]" />
                 <span>{selectedPeriod}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-[var(--color-muted)]" />
+                <ChevronDown className="h-3.5 w-3.5 text-[#5F6B7A]" />
               </button>
             </div>
           </div>
 
-          {/* Right: EN / हिं Toggle + Theme Toggle + User Account */}
+          {/* Right: EN / हिं Toggle + User Account */}
           <div className="flex items-center gap-3">
             {/* Hinglish Toggle Button (from §9.3 & §9.4) */}
             <button
               type="button"
               onClick={toggleLang}
-              className="px-2.5 py-1 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-surface-2)] text-xs font-bold text-[var(--color-text)] hover:border-[var(--color-amber)] transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-[8px] border border-[#E3E7EE] bg-[#F6F7F9] text-xs font-semibold text-[#111418] hover:border-[#F5A524] transition-colors cursor-pointer"
               title="Toggle English / Hinglish"
             >
               {lang === 'en' ? 'EN / हिं' : 'हिं / EN'}
             </button>
 
-            {/* Theme Switcher (Dark / Light) */}
             <ThemeToggle />
 
             {/* Google User Avatar / Sign-In Button */}
             {user ? (
               <div className="flex items-center gap-2">
                 <div
-                  className="h-8 w-8 rounded-full bg-[var(--color-amber)] text-[#0A0C10] font-bold text-xs flex items-center justify-center border border-[var(--color-border)] cursor-pointer"
+                  className="h-8 w-8 rounded-full bg-[#F5A524] text-[#1A1A1A] font-bold text-xs flex items-center justify-center border border-[#E3E7EE] cursor-pointer shadow-xs"
                   title={user.email || 'Logged in'}
                   onClick={handleSignOut}
                 >
@@ -233,7 +231,7 @@ function AppShellInner({ children }: AppShellProps) {
                 onClick={handleGoogleSignIn}
                 variant="secondary"
                 size="sm"
-                className="h-8 text-xs font-semibold"
+                className="h-8 text-xs font-medium"
               >
                 <UserIcon className="h-3.5 w-3.5 mr-1" />
                 Sign in
@@ -250,7 +248,7 @@ function AppShellInner({ children }: AppShellProps) {
         {/* ─────────────────────────────────────────────────────────────
             3. Mobile Bottom Tab Bar
         ────────────────────────────────────────────────────────────── */}
-        <nav className="md:hidden sticky bottom-0 z-40 h-16 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur-md px-2 flex items-center justify-around">
+        <nav className="md:hidden sticky bottom-0 z-40 h-16 border-t border-[#E3E7EE] bg-white/95 backdrop-blur-md px-2 flex items-center justify-around">
           {[
             { name: 'Dash', href: '/app', icon: Home },
             { name: 'Sales', href: '/app/sales', icon: FileText },
@@ -264,8 +262,8 @@ function AppShellInner({ children }: AppShellProps) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-col items-center justify-center w-14 py-1 text-[10px] font-semibold transition-colors ${
-                  active ? 'text-[var(--color-amber)]' : 'text-[var(--color-muted)]'
+                className={`flex flex-col items-center justify-center w-14 py-1 text-[10px] font-medium transition-colors ${
+                  active ? 'text-[#9E6400] font-semibold' : 'text-[#5F6B7A]'
                 }`}
               >
                 <TabIcon className="h-4 w-4 mb-0.5" />

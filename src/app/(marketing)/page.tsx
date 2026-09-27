@@ -21,6 +21,7 @@ import {
   Sparkles,
   TrendingUp,
   UploadCloud,
+  Check,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -30,36 +31,36 @@ export default function LandingPage() {
   const featureIcons = [
     <FileText key="f1" className="h-6 w-6 text-[#F5A524]" />,
     <Search key="f2" className="h-6 w-6 text-[#17C964]" />,
-    <Scale key="f3" className="h-6 w-6 text-[#3B82F6]" />,
+    <Scale key="f3" className="h-6 w-6 text-[#2563EB]" />,
     <TrendingUp key="f4" className="h-6 w-6 text-[#F5A524]" />,
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-[#ECEDEE] flex flex-col selection:bg-[#F5A524] selection:text-black">
+    <div className="min-h-screen bg-[#F6F7F9] text-[#111418] flex flex-col selection:bg-[#F5A524] selection:text-[#1A1A1A]">
       {/* ─────────────────────────────────────────────────────────────
           1. TopNav
       ────────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 w-full border-b border-[#232B36] bg-[#0A0C10]/85 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-[#E3E7EE] bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-18 max-w-[1200px] items-center justify-between px-6">
           <Logo href="/" size="md" />
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#9BA1A6]">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#5F6B7A]">
             <a
               href="#features"
-              className="hover:text-[#ECEDEE] transition-colors"
+              className="hover:text-[#111418] transition-colors"
             >
               {nav.features}
             </a>
             <a
               href="#how-it-works"
-              className="hover:text-[#ECEDEE] transition-colors"
+              className="hover:text-[#111418] transition-colors"
             >
               {nav.howItWorks}
             </a>
             <a
               href="#faq"
-              className="hover:text-[#ECEDEE] transition-colors"
+              className="hover:text-[#111418] transition-colors"
             >
               {nav.faq}
             </a>
@@ -70,7 +71,7 @@ export default function LandingPage() {
             <Button asChild variant="primary" size="default">
               <Link href="/onboarding?demo=1">
                 {t.primaryCta}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
           </div>
@@ -80,14 +81,14 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           2. Hero Section
       ────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28 border-b border-[#232B36]/60">
+      <section className="relative overflow-hidden pt-12 pb-20 md:pt-20 md:pb-28 border-b border-[#E3E7EE]">
         {/* Subtle grid background */}
         <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          className="absolute inset-0 opacity-[0.4] pointer-events-none"
           style={{
             backgroundImage:
-              'linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
+              'linear-gradient(to right, #E3E7EE 1px, transparent 1px), linear-gradient(to bottom, #E3E7EE 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
           }}
         />
 
@@ -96,20 +97,20 @@ export default function LandingPage() {
             {/* Left Column: Headlines + CTAs */}
             <div className="lg:col-span-7 space-y-6 text-left">
               {/* Eyebrow badge */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#F5A524]/30 bg-[#F5A524]/10 px-3.5 py-1 text-xs font-semibold text-[#F5A524]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#F5A524]/30 bg-[#FDF6E4] px-3.5 py-1 text-xs font-semibold text-[#9E6400]">
                 <Sparkles className="h-3.5 w-3.5 text-[#F5A524]" />
                 <span>{t.eyebrow}</span>
               </div>
 
               {/* H1 */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[#ECEDEE] leading-[1.08]">
+              <h1 className="text-5xl sm:text-6xl font-semibold tracking-[-0.03em] text-[#111418] leading-[1.08]">
                 <span>{t.h1Line1}</span>
                 <br />
                 <span className="text-[#F5A524]">{t.h1Line2}</span>
               </h1>
 
               {/* Subtitle */}
-              <p className="max-w-xl text-base sm:text-lg text-[#9BA1A6] leading-relaxed">
+              <p className="max-w-xl text-base sm:text-lg text-[#5F6B7A] leading-relaxed">
                 {t.sub}
               </p>
 
@@ -118,7 +119,7 @@ export default function LandingPage() {
                 <Button asChild variant="primary" size="lg">
                   <Link href="/onboarding?demo=1">
                     {t.primaryCta}
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
                   </Link>
                 </Button>
                 <Button asChild variant="secondary" size="lg">
@@ -127,17 +128,17 @@ export default function LandingPage() {
               </div>
 
               {/* Quick stats pill */}
-              <div className="flex flex-wrap items-center gap-6 pt-3 text-xs text-[#9BA1A6]">
+              <div className="flex flex-wrap items-center gap-6 pt-3 text-xs text-[#5F6B7A]">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-[#17C964]" />
+                  <Check className="h-4 w-4 text-[#17C964] stroke-[3]" />
                   <span>Rule 88C / 88D compliance</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-[#17C964]" />
+                  <Check className="h-4 w-4 text-[#17C964] stroke-[3]" />
                   <span>No GST password needed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-[#17C964]" />
+                  <Check className="h-4 w-4 text-[#17C964] stroke-[3]" />
                   <span>1-click demo load</span>
                 </div>
               </div>
@@ -154,9 +155,9 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           3. Trust Strip
       ────────────────────────────────────────────────────────────── */}
-      <section className="border-b border-[#232B36] bg-[#12161D]/50 py-5">
+      <section className="border-b border-[#E3E7EE] bg-white py-5">
         <div className="mx-auto max-w-[1200px] px-6 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-medium text-[#9BA1A6]">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-medium text-[#5F6B7A]">
             <span className="flex h-2 w-2 rounded-full bg-[#17C964]" />
             <span>{t.trustStrip}</span>
           </div>
@@ -166,14 +167,14 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           4. The 4 Feature Cards (Screen 0 §9.4 wireframe)
       ────────────────────────────────────────────────────────────── */}
-      <section id="features" className="py-20 md:py-28 border-b border-[#232B36]/60">
+      <section id="features" className="py-20 md:py-28 border-b border-[#E3E7EE] bg-white">
         <div className="mx-auto max-w-[1200px] px-6 space-y-12">
           {/* Section Heading */}
           <div className="space-y-3 text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#ECEDEE]">
+            <h2 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
               {t.featuresTitle}
             </h2>
-            <p className="text-sm sm:text-base text-[#9BA1A6]">
+            <p className="text-sm sm:text-base text-[#5F6B7A]">
               {t.featuresSub}
             </p>
           </div>
@@ -183,29 +184,29 @@ export default function LandingPage() {
             {t.featureCards.map((feat, index) => (
               <div
                 key={feat.id}
-                className="group relative rounded-[16px] border border-[#232B36] bg-[#12161D] p-7 transition-all duration-200 hover:border-[#3B4856] hover:bg-[#1A2029]"
+                className="group relative rounded-[16px] border border-[#E3E7EE] bg-white p-7 transition-all duration-200 hover:border-[#F5A524] hover:shadow-md shadow-xs"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 rounded-[12px] bg-[#0A0C10] border border-[#232B36]">
+                  <div className="p-3 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/20">
                     {featureIcons[index]}
                   </div>
-                  <span className="text-[11px] font-semibold text-[#9BA1A6] uppercase tracking-wider bg-[#0A0C10] px-2.5 py-1 rounded-full border border-[#232B36]">
+                  <span className="text-[11px] font-semibold text-[#9E6400] uppercase tracking-wider bg-[#FDF6E4] px-2.5 py-1 rounded-full border border-[#F5A524]/20">
                     {feat.tag}
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-[#ECEDEE] mb-2 group-hover:text-[#F5A524] transition-colors">
+                <h3 className="text-[17px] font-medium text-[#111418] mb-2 group-hover:text-[#9E6400] transition-colors">
                   {feat.title}
                 </h3>
-                <p className="text-sm text-[#9BA1A6] leading-relaxed mb-6">
+                <p className="text-sm text-[#5F6B7A] leading-relaxed mb-6">
                   {feat.desc}
                 </p>
 
-                <div className="pt-4 border-t border-[#232B36] flex items-center justify-between text-xs font-semibold">
-                  <span className="text-[#17C964]">{feat.stat}</span>
+                <div className="pt-4 border-t border-[#E3E7EE] flex items-center justify-between text-xs font-medium">
+                  <span className="text-[#0F8C43] font-semibold">{feat.stat}</span>
                   <Link
                     href="/onboarding?demo=1"
-                    className="flex items-center gap-1 text-[#F5A524] hover:underline"
+                    className="flex items-center gap-1 text-[#9E6400] hover:underline"
                   >
                     Try feature
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -220,13 +221,13 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           5. How it Works (4-step stepper)
       ────────────────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-20 md:py-28 border-b border-[#232B36]/60 bg-[#12161D]/30">
+      <section id="how-it-works" className="py-20 md:py-28 border-b border-[#E3E7EE] bg-[#F6F7F9]">
         <div className="mx-auto max-w-[1200px] px-6 space-y-14">
           <div className="space-y-3 text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#ECEDEE]">
+            <h2 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
               {t.howItWorksTitle}
             </h2>
-            <p className="text-sm sm:text-base text-[#9BA1A6]">
+            <p className="text-sm sm:text-base text-[#5F6B7A]">
               {t.howItWorksSub}
             </p>
           </div>
@@ -236,20 +237,20 @@ export default function LandingPage() {
             {t.steps.map((step) => (
               <div
                 key={step.num}
-                className="relative rounded-[16px] border border-[#232B36] bg-[#12161D] p-6 space-y-3"
+                className="relative rounded-[16px] border border-[#E3E7EE] bg-white p-6 space-y-3 shadow-xs hover:border-[#CBD2DE] transition-all"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#F5A524] font-bold text-[#0A0C10] text-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#F5A524] font-semibold text-[#1A1A1A] text-sm shadow-xs">
                     {step.num}
                   </div>
-                  <span className="text-[11px] uppercase tracking-wider text-[#9BA1A6] font-semibold">
+                  <span className="text-[11px] uppercase tracking-wider text-[#5F6B7A] font-semibold">
                     Step {step.num}
                   </span>
                 </div>
-                <h4 className="text-base font-bold text-[#ECEDEE] pt-1">
+                <h4 className="text-base font-semibold text-[#111418] pt-1">
                   {step.title}
                 </h4>
-                <p className="text-xs sm:text-sm text-[#9BA1A6] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#5F6B7A] leading-relaxed">
                   {step.desc}
                 </p>
               </div>
@@ -261,17 +262,17 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           6. Demo Band
       ────────────────────────────────────────────────────────────── */}
-      <section className="py-16 border-b border-[#232B36] bg-gradient-to-r from-[#12161D] via-[#1A2029] to-[#12161D]">
+      <section className="py-16 border-b border-[#E3E7EE] bg-white">
         <div className="mx-auto max-w-[1200px] px-6">
-          <div className="rounded-[16px] border border-[#F5A524]/30 bg-[#0A0C10] p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="rounded-[16px] border border-[#F5A524]/30 bg-[#FDF6E4] p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
             <div className="space-y-2 text-left">
-              <span className="text-xs font-semibold text-[#F5A524] uppercase tracking-widest">
+              <span className="text-xs font-semibold text-[#9E6400] uppercase tracking-widest">
                 Interactive Preview
               </span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#ECEDEE]">
+              <h3 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
                 {t.demoBand.title}
               </h3>
-              <p className="text-sm text-[#9BA1A6] max-w-xl">
+              <p className="text-sm text-[#5F6B7A] max-w-xl">
                 {t.demoBand.tagline}
               </p>
             </div>
@@ -279,7 +280,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <Button asChild variant="primary" size="lg">
                 <Link href="/onboarding?demo=1">
-                  <Play className="h-4 w-4 fill-current" />
+                  <Play className="h-4 w-4 fill-current mr-1.5" />
                   {t.primaryCta}
                 </Link>
               </Button>
@@ -291,13 +292,13 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           7. FAQ Section (4 items accordion)
       ────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-20 md:py-28 border-b border-[#232B36]/60">
+      <section id="faq" className="py-20 md:py-28 border-b border-[#E3E7EE] bg-[#F6F7F9]">
         <div className="mx-auto max-w-[1200px] px-6 space-y-12">
           <div className="space-y-3 text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#ECEDEE]">
+            <h2 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
               {t.faqTitle}
             </h2>
-            <p className="text-sm sm:text-base text-[#9BA1A6]">
+            <p className="text-sm sm:text-base text-[#5F6B7A]">
               {t.faqSub}
             </p>
           </div>
@@ -309,26 +310,26 @@ export default function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           8. Footer
       ────────────────────────────────────────────────────────────── */}
-      <footer className="py-12 bg-[#0A0C10]">
+      <footer className="py-12 bg-white">
         <div className="mx-auto max-w-[1200px] px-6 space-y-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-8 border-b border-[#232B36]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-8 border-b border-[#E3E7EE]">
             <div>
               <Logo size="md" />
-              <p className="text-xs text-[#9BA1A6] mt-2">
+              <p className="text-xs text-[#5F6B7A] mt-2">
                 {t.footer.tagline}
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-xs font-semibold text-[#ECEDEE]">
+              <p className="text-xs font-semibold text-[#111418]">
                 {t.footer.team}
               </p>
-              <p className="text-xs text-[#9BA1A6] mt-1">
+              <p className="text-xs text-[#5F6B7A] mt-1">
                 Region: {CONFIG.region} · Cloud Run
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#9BA1A6]">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#5F6B7A]">
             <p>{t.footer.disclaimer}</p>
             <p>© {new Date().getFullYear()} {CONFIG.app.name}. Built with Google Cloud.</p>
           </div>

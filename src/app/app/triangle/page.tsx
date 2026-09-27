@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,13 +16,8 @@ import {
   Edit3,
   Check,
   X,
-  FileText,
-  Calendar,
   Square,
   CheckSquare,
-  ArrowRight,
-  TrendingDown,
-  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,8 +33,8 @@ export default function TrianglePage() {
   const isHi = lang === 'hi';
 
   // Three Giant Numbers state
-  const [gstr1Liability, setGstr1Liability] = useState<number>(CONFIG.demo.salesTax); // 151560
-  const [gstr2bCredit, setGstr2bCredit] = useState<number>(CONFIG.demo.itcAvailable2B); // 142300
+  const [gstr1Liability] = useState<number>(CONFIG.demo.salesTax); // 151560
+  const [gstr2bCredit] = useState<number>(CONFIG.demo.itcAvailable2B); // 142300
   const [gstr3bTaxPaid, setGstr3bTaxPaid] = useState<number>(CONFIG.demo.taxPaid3B); // 151560
   const [gstr3bItcClaimed, setGstr3bItcClaimed] = useState<number>(144600); // 142300 + 2300 gap
 
@@ -119,45 +114,32 @@ export default function TrianglePage() {
   const [streamingCredit, setStreamingCredit] = useState<boolean>(false);
   const [creditAiText, setCreditAiText] = useState<string>('');
 
-  // Math differences
-  const salesGap = Math.abs(gstr1Liability - gstr3bTaxPaid);
-  const isSalesMatch = salesGap <= CONFIG.validation.taxTolerance;
-
-  const creditGap = gstr3bItcClaimed - gstr2bCredit;
-  const isCreditMatch = Math.abs(creditGap) <= CONFIG.validation.taxTolerance;
-
-  // Toggle cause checkboxes
-  const toggleCreditCause = (id: string) => {
-    setCreditCauses((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, checked: !c.checked } : c))
-    );
+  // Handle 3B save
+  const handleSave3BFigures = () => {
+    const paid = parseFloat(editTaxPaidInput.replace(/,/g, '')) || 0;
+    const itc = parseFloat(editItcClaimedInput.replace(/,/g, '')) || 0;
+    setGstr3bTaxPaid(paid);
+    setGstr3bItcClaimed(itc);
+    setIsEditing3B(false);
+    toast.success('GSTR-3B self-assessed figures updated and triangle recalculated');
   };
 
+  // Toggle causes
   const toggleSalesCause = (id: string) => {
     setSalesCauses((prev) =>
       prev.map((c) => (c.id === id ? { ...c, checked: !c.checked } : c))
     );
   };
 
-  // Forgiving parser for 3B inputs (§9.4)
-  const parseForgivingNumber = (val: string): number => {
-    const cleaned = val.replace(/[^0-9.]/g, '');
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : Math.round(num);
+  const toggleCreditCause = (id: string) => {
+    setCreditCauses((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, checked: !c.checked } : c))
+    );
   };
 
-  const handleSave3BFigures = () => {
-    const newPaid = parseForgivingNumber(editTaxPaidInput);
-    const newClaimed = parseForgivingNumber(editItcClaimedInput);
-    setGstr3bTaxPaid(newPaid);
-    setGstr3bItcClaimed(newClaimed);
-    setIsEditing3B(false);
-    toast.success('GSTR-3B figures updated. Triangle recomputed!');
-  };
-
-  // Stream Gemini Plain-Language Explanation via SSE
-  const handleStreamExplanation = async (target: 'sales' | 'credit') => {
-    if (target === 'sales') {
+  // Stream Gemini plain language explanations
+  const handleStreamExplanation = async (type: 'sales' | 'credit') => {
+    if (type === 'sales') {
       setStreamingSales(true);
       setSalesAiText('');
     } else {
@@ -166,45 +148,32 @@ export default function TrianglePage() {
     }
 
     try {
-      const context =
-        target === 'sales'
-          ? {
-              type: 'triangle_gap',
-              gap: salesGap,
-              amountAtRisk: salesGap,
-              lang,
-              ruleNotice: 'Rule 88C DRC-01B',
-              details: `GSTR-1 is ₹${gstr1Liability.toLocaleString('en-IN')}, 3B tax paid is ₹${gstr3bTaxPaid.toLocaleString('en-IN')}`,
-            }
-          : {
-              type: 'triangle_gap',
-              gap: creditGap,
-              amountAtRisk: creditGap,
-              lang,
-              ruleNotice: 'Rule 88D DRC-01C',
-              details: `2B available is ₹${gstr2bCredit.toLocaleString('en-IN')}, 3B ITC claimed is ₹${gstr3bItcClaimed.toLocaleString('en-IN')}`,
-            };
+      const prompt =
+        type === 'sales'
+          ? `Explain simply: GSTR-1 outward tax liability is ₹${gstr1Liability} and GSTR-3B tax paid is ₹${gstr3bTaxPaid}. Gap is ₹0. Is this Rule 88C compliant?`
+          : `Explain simply: GSTR-2B available ITC is ₹${gstr2bCredit} and GSTR-3B ITC claimed is ₹${gstr3bItcClaimed}. There is a ₹2,300 excess claim. How does Rule 88D DRC-01C apply and what should the business do?`;
 
-      const response = await fetch('/api/explain', {
+      const res = await fetch('/api/explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context }),
+        body: JSON.stringify({
+          customPrompt: prompt,
+          lang,
+        }),
       });
 
-      if (!response.body) throw new Error('ReadableStream not supported.');
+      if (!res.ok) throw new Error('Explain service error');
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n\n');
-        buffer = lines.pop() || '';
-
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
         for (const line of lines) {
           const trimmed = line.trim();
           if (trimmed.startsWith('data: ')) {
@@ -213,43 +182,46 @@ export default function TrianglePage() {
             try {
               const parsed = JSON.parse(dataStr);
               if (parsed.text) {
-                if (target === 'sales') {
+                if (type === 'sales') {
                   setSalesAiText((prev) => prev + parsed.text);
                 } else {
                   setCreditAiText((prev) => prev + parsed.text);
                 }
               }
-            } catch (e) {
-              // Ignore non-json chunks
-            }
+            } catch (e) {}
           }
         }
       }
-    } catch (err: any) {
-      toast.error('AI streaming error: ' + (err.message || 'Unknown'));
+    } catch (e: any) {
+      toast.error('AI explanation failed');
     } finally {
-      if (target === 'sales') setStreamingSales(false);
+      if (type === 'sales') setStreamingSales(false);
       else setStreamingCredit(false);
     }
   };
 
+  // Differences
+  const salesGap = Math.abs(gstr1Liability - gstr3bTaxPaid);
+  const isSalesMatch = salesGap <= 1; // within ₹1 tolerance
+  const creditGap = gstr3bItcClaimed - gstr2bCredit; // positive means claimed more than 2B
+
   return (
-    <div className="space-y-6 max-w-[1200px] mx-auto pb-16">
+    <div className="space-y-6 max-w-[1200px] mx-auto pb-16 font-sans">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#232B36] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E3E7EE] pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-[#F5A524] tracking-wider uppercase">
+            <span className="text-xs font-semibold text-[#9E6400] tracking-wider uppercase">
               Feature 3 · Statutory Triangle Audit
             </span>
             <Badge variant="red" dot className="text-[11px]">
               {isHi ? 'सक्रिय अवधि:' : 'Active Period:'} {CONFIG.demo.periodLabel}
             </Badge>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+          <h1 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
             {isHi ? 'तीन संख्याएं। शून्य हैरानी।' : 'Three Numbers. Zero Surprises.'}
           </h1>
-          <p className="text-sm text-[#9BA1A6] mt-0.5">
+          <p className="text-sm text-[#5F6B7A] mt-0.5">
             {isHi
               ? 'GSTR-1 देनदारी, 2B इनपुट क्रेडिट और 3B भुगतान की तुलना करें — टैक्स विभाग के नोटिस से पहले।'
               : 'Cross-audit GSTR-1 outward tax liability, GSTR-2B available credit, and GSTR-3B filed figures before payment.'}
@@ -263,7 +235,7 @@ export default function TrianglePage() {
             </Button>
           </Link>
           <Link href="/app/periods">
-            <Button variant="primary" size="sm" className="text-xs font-bold bg-[#17C964] hover:bg-[#17C964]/90 text-black">
+            <Button variant="primary" size="sm" className="text-xs font-medium">
               {isHi ? 'अवधि रिपोर्ट (F4) →' : 'Period Trends (F4) →'}
             </Button>
           </Link>
@@ -275,30 +247,32 @@ export default function TrianglePage() {
       ────────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: GSTR-1 Tax Liability */}
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-5 flex flex-col justify-between hover:border-[#232B36]/80 transition-colors shadow-sm">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 flex flex-col justify-between hover:border-[#CBD2DE] transition-colors shadow-xs">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#9BA1A6]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#5F6B7A]">
                 [GSTR-1 tax liability]
               </span>
-              <Badge variant="emerald" className="text-[10px] px-2 py-0">
-                auto ✓
+              <Badge variant="emerald" className="text-[10px] px-2 py-0 flex items-center gap-1">
+                <Check className="h-3 w-3 stroke-[3]" />
+                auto
               </Badge>
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <div className="text-2xl sm:text-[30px] font-semibold text-[#111418] tracking-tight tabular-nums">
                 ₹{gstr1Liability.toLocaleString('en-IN')}
               </div>
-              <p className="text-xs text-[#9BA1A6] mt-1">
+              <p className="text-xs text-[#5F6B7A] mt-1">
                 {isHi ? 'आपकी बिक्री बिलों से निकाला गया' : 'from your sales'}
               </p>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#1A2029] mt-3 flex items-center justify-between">
-            <span className="text-[11px] text-[#9BA1A6]">24 outward invoices</span>
+          <div className="pt-4 border-t border-[#E3E7EE] mt-3 flex items-center justify-between">
+            <span className="text-[11px] text-[#5F6B7A]">24 outward invoices</span>
             <button
+              type="button"
               onClick={() =>
                 setWhyModal({
                   title: 'GSTR-1 Tax Liability (₹1,51,560)',
@@ -309,38 +283,41 @@ export default function TrianglePage() {
                   note: 'This figure is compiled into your byte-exact GSTR-1 JSON export.',
                 })
               }
-              className="text-[11px] text-[#F5A524] hover:underline font-semibold cursor-pointer"
+              className="text-[11px] text-[#9E6400] hover:underline font-medium cursor-pointer flex items-center gap-1"
             >
-              (Why? ⓘ)
+              <span>Why?</span>
+              <Info className="h-3 w-3 text-[#F5A524]" />
             </button>
           </div>
         </Card>
 
         {/* Card 2: 2B Credit Available */}
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-5 flex flex-col justify-between hover:border-[#232B36]/80 transition-colors shadow-sm">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 flex flex-col justify-between hover:border-[#CBD2DE] transition-colors shadow-xs">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#9BA1A6]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#5F6B7A]">
                 [2B credit available]
               </span>
-              <Badge variant="emerald" className="text-[10px] px-2 py-0">
-                auto ✓
+              <Badge variant="emerald" className="text-[10px] px-2 py-0 flex items-center gap-1">
+                <Check className="h-3 w-3 stroke-[3]" />
+                auto
               </Badge>
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <div className="text-2xl sm:text-[30px] font-semibold text-[#111418] tracking-tight tabular-nums">
                 ₹{gstr2bCredit.toLocaleString('en-IN')}
               </div>
-              <p className="text-xs text-[#9BA1A6] mt-1">
+              <p className="text-xs text-[#5F6B7A] mt-1">
                 {isHi ? '2B पोर्टल अपलोड से निकाला गया' : 'from 2B upload'}
               </p>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#1A2029] mt-3 flex items-center justify-between">
-            <span className="text-[11px] text-[#9BA1A6]">42 supplier records</span>
+          <div className="pt-4 border-t border-[#E3E7EE] mt-3 flex items-center justify-between">
+            <span className="text-[11px] text-[#5F6B7A]">42 supplier records</span>
             <button
+              type="button"
               onClick={() =>
                 setWhyModal({
                   title: 'GSTR-2B Credit Available (₹1,42,300)',
@@ -351,75 +328,78 @@ export default function TrianglePage() {
                   note: 'Under Section 16(2)(aa), this is the maximum ITC you can claim without automated Rule 88D flags.',
                 })
               }
-              className="text-[11px] text-[#F5A524] hover:underline font-semibold cursor-pointer"
+              className="text-[11px] text-[#9E6400] hover:underline font-medium cursor-pointer flex items-center gap-1"
             >
-              (Why? ⓘ)
+              <span>Why?</span>
+              <Info className="h-3 w-3 text-[#F5A524]" />
             </button>
           </div>
         </Card>
 
         {/* Card 3: 3B figures (with inline edit) */}
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-5 flex flex-col justify-between hover:border-[#232B36]/80 transition-colors shadow-sm">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 flex flex-col justify-between hover:border-[#CBD2DE] transition-colors shadow-xs">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#9BA1A6]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#5F6B7A]">
                 [3B figures]
               </span>
               <button
+                type="button"
                 onClick={() => setIsEditing3B(!isEditing3B)}
-                className="text-[10px] text-[#F5A524] hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                className="text-[11px] text-[#9E6400] hover:underline flex items-center gap-1 font-medium cursor-pointer"
               >
                 <Edit3 className="h-3 w-3" />
-                {isEditing3B ? 'cancel' : '(edit ✎ — auto)'}
+                {isEditing3B ? 'cancel' : 'edit — auto'}
               </button>
             </div>
 
             {isEditing3B ? (
               <div className="mt-2 space-y-2">
                 <div>
-                  <label className="text-[10px] text-[#9BA1A6] uppercase block font-semibold">
+                  <label className="text-[10px] text-[#5F6B7A] uppercase block font-semibold">
                     Tax Paid (₹)
                   </label>
                   <input
                     type="text"
                     value={editTaxPaidInput}
                     onChange={(e) => setEditTaxPaidInput(e.target.value)}
-                    className="w-full bg-[#0B0E14] border border-[#232B36] rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:border-[#F5A524] focus:outline-none"
+                    className="w-full bg-[#F6F7F9] border border-[#E3E7EE] rounded-[10px] px-2.5 py-1 text-xs text-[#111418] font-mono focus:border-[#F5A524] focus:bg-white focus:outline-none"
                     placeholder="151560"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-[#9BA1A6] uppercase block font-semibold">
+                  <label className="text-[10px] text-[#5F6B7A] uppercase block font-semibold">
                     ITC Claimed (₹)
                   </label>
                   <input
                     type="text"
                     value={editItcClaimedInput}
                     onChange={(e) => setEditItcClaimedInput(e.target.value)}
-                    className="w-full bg-[#0B0E14] border border-[#232B36] rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:border-[#F5A524] focus:outline-none"
+                    className="w-full bg-[#F6F7F9] border border-[#E3E7EE] rounded-[10px] px-2.5 py-1 text-xs text-[#111418] font-mono focus:border-[#F5A524] focus:bg-white focus:outline-none"
                     placeholder="144600"
                   />
                 </div>
                 <Button
                   size="sm"
+                  variant="primary"
                   onClick={handleSave3BFigures}
-                  className="w-full h-7 text-xs bg-[#F5A524] text-black font-bold mt-1"
+                  className="w-full h-8 text-xs font-medium mt-1 shadow-xs"
                 >
-                  <Check className="h-3 w-3 mr-1" />
+                  <Check className="h-3.5 w-3.5 mr-1" />
                   Save & Recalculate
                 </Button>
               </div>
             ) : (
               <div className="mt-3 space-y-1">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-[#9BA1A6]">Tax paid:</span>
-                  <span className="text-lg font-black text-white">
+                  <span className="text-xs text-[#5F6B7A]">Tax paid:</span>
+                  <span className="text-lg font-semibold text-[#111418] tabular-nums">
                     ₹{gstr3bTaxPaid.toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-[#9BA1A6]">ITC claimed:</span>
-                  <span className="text-lg font-black text-[#F31260]">
+                  <span className="text-xs text-[#5F6B7A]">ITC claimed:</span>
+                  <span className="text-lg font-semibold text-[#F31260] tabular-nums">
                     ₹{gstr3bItcClaimed.toLocaleString('en-IN')}
                   </span>
                 </div>
@@ -427,21 +407,23 @@ export default function TrianglePage() {
             )}
           </div>
 
-          <div className="pt-3 border-t border-[#1A2029] mt-3 flex items-center justify-between">
-            <span className="text-[11px] text-[#9BA1A6]">Source: Monthly 3B</span>
+          <div className="pt-3 border-t border-[#E3E7EE] mt-3 flex items-center justify-between">
+            <span className="text-[11px] text-[#5F6B7A]">Source: Monthly 3B</span>
             <button
+              type="button"
               onClick={() =>
                 setWhyModal({
                   title: 'GSTR-3B Tax Paid & Claimed',
                   description:
                     'These figures come from your monthly self-assessed GSTR-3B tax return.',
                   subtraction: `Tax Paid: ₹${gstr3bTaxPaid.toLocaleString('en-IN')} | ITC Claimed: ₹${gstr3bItcClaimed.toLocaleString('en-IN')}`,
-                  note: 'Click (edit ✎) to test what happens if your accountant enters different 3B numbers.',
+                  note: 'Click (edit) to test what happens if your accountant enters different 3B numbers.',
                 })
               }
-              className="text-[11px] text-[#F5A524] hover:underline font-semibold cursor-pointer"
+              className="text-[11px] text-[#9E6400] hover:underline font-medium cursor-pointer flex items-center gap-1"
             >
-              (Why? ⓘ)
+              <span>Why?</span>
+              <Info className="h-3 w-3 text-[#F5A524]" />
             </button>
           </div>
         </Card>
@@ -452,28 +434,29 @@ export default function TrianglePage() {
       ────────────────────────────────────────────────────────────── */}
       <div className="space-y-4">
         {/* ROW 1: Sales check */}
-        <Card className="rounded-[16px] border border-[#232B36] bg-[#12161F] p-5 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#232B36] pb-3 mb-3">
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3E7EE] pb-3 mb-3">
             <div className="flex items-center gap-3">
               {isSalesMatch ? (
-                <div className="w-8 h-8 rounded-full bg-[#17C964]/15 border border-[#17C964]/30 flex items-center justify-center text-[#17C964]">
+                <div className="w-8 h-8 rounded-full bg-[#17C964]/10 border border-[#17C964]/25 flex items-center justify-center text-[#0F8C43]">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
               ) : (
-                <div className="w-8 h-8 rounded-full bg-[#F31260]/15 border border-[#F31260]/30 flex items-center justify-center text-[#F31260]">
+                <div className="w-8 h-8 rounded-full bg-[#F31260]/10 border border-[#F31260]/25 flex items-center justify-center text-[#C70E4E]">
                   <AlertTriangle className="h-5 w-5" />
                 </div>
               )}
 
               <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  {isSalesMatch ? '🟢' : '🔴'} {isHi ? 'बिक्री जांच: GSTR-1 बनाम 3B टैक्स भुगतान' : 'Sales check: GSTR-1 vs 3B tax paid'}
-                  <span className="text-[#9BA1A6] font-normal">—</span>
-                  <span className={isSalesMatch ? 'text-[#17C964]' : 'text-[#F31260]'}>
+                <h3 className="font-medium text-sm text-[#111418] flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${isSalesMatch ? 'bg-[#17C964]' : 'bg-[#F31260]'}`} />
+                  {isHi ? 'बिक्री जांच: GSTR-1 बनाम 3B टैक्स भुगतान' : 'Sales check: GSTR-1 vs 3B tax paid'}
+                  <span className="text-[#5F6B7A] font-normal">—</span>
+                  <span className={isSalesMatch ? 'text-[#0F8C43] font-medium' : 'text-[#C70E4E] font-medium'}>
                     {isSalesMatch ? 'Match. Gap ₹0' : `Gap: ₹${salesGap.toLocaleString('en-IN')} underpaid`}
                   </span>
                 </h3>
-                <p className="text-xs text-[#9BA1A6]">
+                <p className="text-xs text-[#5F6B7A]">
                   {isHi
                     ? 'Rule 88C (DRC-01B नोटिस) के तहत निगरानी: बिक्री देनदारी पूरी तरह से चुकाई गई है।'
                     : 'Audited under Rule 88C (DRC-01B liability notice) — 0 liability gap detected.'}
@@ -483,6 +466,7 @@ export default function TrianglePage() {
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() =>
                   setWhyModal({
                     title: 'Sales Check Math',
@@ -491,9 +475,10 @@ export default function TrianglePage() {
                     note: 'Rule 88C triggers an automated DRC-01B notice if GSTR-1 liability exceeds 3B paid by more than 20% or ₹25 lakhs.',
                   })
                 }
-                className="text-xs text-[#F5A524] hover:underline font-semibold cursor-pointer"
+                className="text-xs text-[#9E6400] hover:underline font-medium cursor-pointer flex items-center gap-1"
               >
-                (Why? ⓘ)
+                <span>Why?</span>
+                <Info className="h-3 w-3 text-[#F5A524]" />
               </button>
 
               <Button
@@ -501,18 +486,18 @@ export default function TrianglePage() {
                 size="sm"
                 onClick={() => handleStreamExplanation('sales')}
                 disabled={streamingSales}
-                className="text-xs border-[#232B36] text-[#9BA1A6] hover:text-white flex items-center gap-1.5 cursor-pointer h-7"
+                className="text-xs border-[#E3E7EE] text-[#5F6B7A] hover:text-[#111418] bg-white flex items-center gap-1.5 cursor-pointer h-8 font-medium"
               >
-                <Sparkles className="h-3 w-3 text-[#F5A524]" />
-                {streamingSales ? 'Thinking...' : '(Explain in simple words)'}
+                <Sparkles className="h-3.5 w-3.5 text-[#F5A524]" />
+                {streamingSales ? 'Thinking...' : 'Explain in simple words'}
               </Button>
             </div>
           </div>
 
           {/* Streamed Gemini explanation for Sales */}
           {salesAiText && (
-            <div className="p-3.5 rounded-xl bg-[#0B0E14] border border-[#232B36] my-3 text-xs text-[#ECEDEE] space-y-1 animate-in fade-in">
-              <div className="flex items-center gap-1.5 text-[#F5A524] font-semibold text-[11px]">
+            <div className="p-3.5 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/30 my-3 text-xs text-[#111418] space-y-1 animate-in fade-in">
+              <div className="flex items-center gap-1.5 text-[#9E6400] font-semibold text-[11px]">
                 <Sparkles className="h-3.5 w-3.5" />
                 Gemini 2.0 Flash Plain-Language Audit:
               </div>
@@ -522,8 +507,8 @@ export default function TrianglePage() {
 
           {/* Possible causes checklist (if gap existed) */}
           {!isSalesMatch && (
-            <div className="mt-3 p-3.5 rounded-xl bg-[#0B0E14] border border-[#232B36] text-xs">
-              <span className="font-bold text-white text-[11px] uppercase tracking-wider block mb-2">
+            <div className="mt-3 p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs">
+              <span className="font-semibold text-[#111418] text-[11px] uppercase tracking-wider block mb-2">
                 Possible causes (tick what applies):
               </span>
               <div className="space-y-2">
@@ -531,14 +516,14 @@ export default function TrianglePage() {
                   <div
                     key={c.id}
                     onClick={() => toggleSalesCause(c.id)}
-                    className="flex items-start gap-2 cursor-pointer select-none text-[#ECEDEE] hover:text-white"
+                    className="flex items-start gap-2 cursor-pointer select-none text-[#111418] hover:text-[#9E6400]"
                   >
                     {c.checked ? (
                       <CheckSquare className="h-4 w-4 text-[#17C964] flex-shrink-0 mt-0.5" />
                     ) : (
-                      <Square className="h-4 w-4 text-[#9BA1A6] flex-shrink-0 mt-0.5" />
+                      <Square className="h-4 w-4 text-[#5F6B7A] flex-shrink-0 mt-0.5" />
                     )}
-                    <span className={c.checked ? 'text-[#17C964] font-medium' : ''}>
+                    <span className={c.checked ? 'text-[#0F8C43] font-medium' : ''}>
                       {c.text}
                     </span>
                   </div>
@@ -549,18 +534,19 @@ export default function TrianglePage() {
         </Card>
 
         {/* ROW 2: Credit check */}
-        <Card className="rounded-[16px] border border-[#F31260]/40 bg-[#12161F] p-5 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#232B36] pb-3 mb-3">
+        <Card className="rounded-[16px] border border-[#F31260]/30 bg-white p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3E7EE] pb-3 mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#F31260]/15 border border-[#F31260]/30 flex items-center justify-center text-[#F31260]">
+              <div className="w-8 h-8 rounded-full bg-[#F31260]/10 border border-[#F31260]/25 flex items-center justify-center text-[#C70E4E]">
                 <AlertTriangle className="h-5 w-5" />
               </div>
 
               <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  🔴 {isHi ? 'क्रेडिट जांच: 2B उपलब्ध बनाम 3B दावा' : 'Credit check: 2B available vs 3B claimed'}
+                <h3 className="font-medium text-sm text-[#111418] flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#F31260]" />
+                  {isHi ? 'क्रेडिट जांच: 2B उपलब्ध बनाम 3B दावा' : 'Credit check: 2B available vs 3B claimed'}
                 </h3>
-                <p className="text-xs text-[#F31260] font-semibold mt-0.5">
+                <p className="text-xs text-[#C70E4E] font-medium mt-0.5 tabular-nums">
                   Gap: ₹{creditGap.toLocaleString('en-IN')} {isHi ? 'रुपए 2B से अधिक क्लेम किए गए' : 'more claimed than 2B allows'}
                 </p>
               </div>
@@ -568,6 +554,7 @@ export default function TrianglePage() {
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() =>
                   setWhyModal({
                     title: 'Credit Check Math (₹2,300 Gap)',
@@ -576,9 +563,10 @@ export default function TrianglePage() {
                     note: 'Under Rule 88D, claiming excess ITC generates a DRC-01C notice requiring response or payment within 7 days.',
                   })
                 }
-                className="text-xs text-[#F5A524] hover:underline font-semibold cursor-pointer"
+                className="text-xs text-[#9E6400] hover:underline font-medium cursor-pointer flex items-center gap-1"
               >
-                (Why? ⓘ)
+                <span>Why?</span>
+                <Info className="h-3 w-3 text-[#F5A524]" />
               </button>
 
               <Button
@@ -586,18 +574,18 @@ export default function TrianglePage() {
                 size="sm"
                 onClick={() => handleStreamExplanation('credit')}
                 disabled={streamingCredit}
-                className="text-xs border-[#232B36] text-[#9BA1A6] hover:text-white flex items-center gap-1.5 cursor-pointer h-7"
+                className="text-xs border-[#E3E7EE] text-[#5F6B7A] hover:text-[#111418] bg-white flex items-center gap-1.5 cursor-pointer h-8 font-medium"
               >
-                <Sparkles className="h-3 w-3 text-[#F5A524]" />
-                {streamingCredit ? 'Thinking...' : '(Explain in simple words)'}
+                <Sparkles className="h-3.5 w-3.5 text-[#F5A524]" />
+                {streamingCredit ? 'Thinking...' : 'Explain in simple words'}
               </Button>
             </div>
           </div>
 
           {/* Streamed Gemini explanation for Credit */}
           {creditAiText && (
-            <div className="p-3.5 rounded-xl bg-[#0B0E14] border border-[#232B36] my-3 text-xs text-[#ECEDEE] space-y-1 animate-in fade-in">
-              <div className="flex items-center gap-1.5 text-[#F5A524] font-semibold text-[11px]">
+            <div className="p-3.5 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/30 my-3 text-xs text-[#111418] space-y-1 animate-in fade-in">
+              <div className="flex items-center gap-1.5 text-[#9E6400] font-semibold text-[11px]">
                 <Sparkles className="h-3.5 w-3.5" />
                 Gemini 2.0 Flash Plain-Language Audit:
               </div>
@@ -606,8 +594,8 @@ export default function TrianglePage() {
           )}
 
           {/* Possible Causes Checklist (§9.4 Wireframe Screen 5) */}
-          <div className="p-3.5 rounded-xl bg-[#0B0E14] border border-[#232B36] text-xs space-y-2.5">
-            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">
+          <div className="p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs space-y-2.5">
+            <span className="font-semibold text-[#111418] text-[11px] uppercase tracking-wider block">
               Possible causes (tick what applies):
             </span>
 
@@ -616,18 +604,18 @@ export default function TrianglePage() {
                 <div
                   key={c.id}
                   onClick={() => toggleCreditCause(c.id)}
-                  className="flex items-start gap-2.5 cursor-pointer select-none text-[#ECEDEE] hover:text-white"
+                  className="flex items-start gap-2.5 cursor-pointer select-none text-[#111418] hover:text-[#9E6400]"
                 >
                   {c.checked ? (
                     <CheckSquare className="h-4 w-4 text-[#17C964] flex-shrink-0 mt-0.5" />
                   ) : (
-                    <Square className="h-4 w-4 text-[#9BA1A6] flex-shrink-0 mt-0.5" />
+                    <Square className="h-4 w-4 text-[#5F6B7A] flex-shrink-0 mt-0.5" />
                   )}
                   <div>
-                    <span className={c.checked ? 'text-[#17C964] font-semibold' : ''}>
+                    <span className={c.checked ? 'text-[#0F8C43] font-medium' : ''}>
                       {c.text}
                     </span>
-                    <span className="text-[11px] text-[#9BA1A6] block mt-0.5">
+                    <span className="text-[11px] text-[#5F6B7A] block mt-0.5">
                       {c.explanation}
                     </span>
                   </div>
@@ -636,7 +624,7 @@ export default function TrianglePage() {
             </div>
 
             {/* Statutory Rule Notice */}
-            <div className="pt-2 border-t border-[#1A2029] text-[11px] text-[#9BA1A6]">
+            <div className="pt-2 border-t border-[#E3E7EE] text-[11px] text-[#5F6B7A]">
               Under Rule 88D, selecting a legitimate statutory cause prepares your audit reply documentation before filing.
             </div>
           </div>
@@ -646,7 +634,7 @@ export default function TrianglePage() {
       {/* ─────────────────────────────────────────────────────────────
           3. Statutory Disclaimer (§9.4 Wireframe — ALWAYS VISIBLE)
       ────────────────────────────────────────────────────────────── */}
-      <div className="p-4 rounded-[14px] bg-[#12161F] border border-[#F5A524]/30 text-xs text-[#ECEDEE] flex items-center gap-3 shadow-sm">
+      <div className="p-4 rounded-[14px] bg-[#FDF6E4] border border-[#F5A524]/25 text-xs text-[#9E6400] flex items-center gap-3 shadow-xs">
         <Info className="h-5 w-5 text-[#F5A524] flex-shrink-0" />
         <p className="font-medium italic leading-relaxed">
           &ldquo;{t.common.triangleDisclaimer}&rdquo;
@@ -654,44 +642,45 @@ export default function TrianglePage() {
       </div>
 
       {/* Navigation Footer */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-[16px] border border-[#232B36] bg-[#12161F]">
-        <div className="text-xs text-[#9BA1A6]">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-[16px] border border-[#E3E7EE] bg-white shadow-xs">
+        <div className="text-xs text-[#5F6B7A]">
           {isHi
             ? 'त्रिकोण जांच पूरी हो गई है। ऐतिहासिक अवधि ट्रेंड्स और GSTR-9 सारांश के लिए आगे बढ़ें।'
             : 'Triangle audit complete. Move to Screen 6 for BigQuery multi-period historical trend analysis.'}
         </div>
         <Link href="/app/periods">
-          <Button className="bg-[#17C964] hover:bg-[#17C964]/90 text-black font-extrabold text-sm px-6 py-2.5 rounded-[12px] shadow-sm flex items-center gap-2 cursor-pointer">
+          <Button variant="primary" size="default" className="font-medium shadow-xs">
             {isHi ? 'अवधि रिपोर्ट (F4) देखें →' : 'Proceed to F4 Periods →'}
           </Button>
         </Link>
       </div>
 
-      {/* MODAL: "Why? ⓘ" Mathematical Subtraction Popover */}
+      {/* MODAL: "Why?" Mathematical Subtraction Popover */}
       {whyModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#12161F] border border-[#232B36] rounded-[16px] max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-[#232B36] pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E3E7EE] rounded-[16px] max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in duration-200 text-[#111418]">
+            <div className="flex items-center justify-between border-b border-[#E3E7EE] pb-3">
+              <h3 className="text-sm font-semibold text-[#111418] flex items-center gap-2">
                 <Info className="h-4 w-4 text-[#F5A524]" />
                 {whyModal.title}
               </h3>
               <button
+                type="button"
                 onClick={() => setWhyModal(null)}
-                className="text-[#9BA1A6] hover:text-white cursor-pointer"
+                className="text-[#5F6B7A] hover:text-[#111418] cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-[#ECEDEE]">
-              <p>{whyModal.description}</p>
+            <div className="space-y-3 text-xs text-[#111418]">
+              <p className="text-[#5F6B7A]">{whyModal.description}</p>
 
-              <div className="p-3 rounded-xl bg-[#0B0E14] border border-[#232B36] font-mono text-xs text-[#F5A524]">
+              <div className="p-3 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] font-mono text-xs text-[#9E6400] font-semibold">
                 {whyModal.subtraction}
               </div>
 
-              <p className="text-[11px] text-[#9BA1A6] italic leading-relaxed">
+              <p className="text-[11px] text-[#5F6B7A] italic leading-relaxed">
                 {whyModal.note}
               </p>
             </div>
@@ -701,7 +690,7 @@ export default function TrianglePage() {
                 variant="primary"
                 size="sm"
                 onClick={() => setWhyModal(null)}
-                className="text-xs bg-[#F5A524] text-black font-bold"
+                className="text-xs font-medium"
               >
                 Understood
               </Button>

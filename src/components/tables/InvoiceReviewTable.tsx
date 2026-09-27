@@ -246,40 +246,40 @@ export function InvoiceReviewTable({
     <TooltipProvider>
       <div className="w-full space-y-5">
         {/* §9.4 Summary Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-[12px] bg-[#161B22] border border-[#232B36] text-xs sm:text-sm">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[#ECEDEE]">
-            <span className="font-semibold text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/25 text-xs sm:text-sm shadow-xs">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[#111418]">
+            <span className="font-semibold text-[#111418]">
               {summary?.totalBills ?? invoices.length} bills
             </span>
-            <span className="text-[#9BA1A6]">·</span>
+            <span className="text-[#5F6B7A]">·</span>
             <span>
               Taxable{' '}
-              <strong className="text-white">
+              <strong className="text-[#111418] tabular-nums">
                 ₹{(summary?.salesTxval ?? 842000).toLocaleString('en-IN')}
               </strong>
             </span>
-            <span className="text-[#9BA1A6]">·</span>
+            <span className="text-[#5F6B7A]">·</span>
             <span>
               Tax{' '}
-              <strong className="text-white">
+              <strong className="text-[#111418] tabular-nums">
                 ₹{(summary?.salesTax ?? 151560).toLocaleString('en-IN')}
               </strong>
             </span>
-            <span className="text-[#9BA1A6]">·</span>
-            <span className="text-[#9BA1A6]">
-              B2B <strong className="text-[#ECEDEE]">{summary?.b2bCount ?? 18}</strong>
+            <span className="text-[#5F6B7A]">·</span>
+            <span className="text-[#5F6B7A]">
+              B2B <strong className="text-[#111418]">{summary?.b2bCount ?? 18}</strong>
             </span>
-            <span className="text-[#9BA1A6]">·</span>
-            <span className="text-[#9BA1A6]">
-              B2CL <strong className="text-[#ECEDEE]">{summary?.b2clCount ?? 1}</strong>
+            <span className="text-[#5F6B7A]">·</span>
+            <span className="text-[#5F6B7A]">
+              B2CL <strong className="text-[#111418]">{summary?.b2clCount ?? 1}</strong>
             </span>
-            <span className="text-[#9BA1A6]">·</span>
-            <span className="text-[#9BA1A6]">
-              B2CS <strong className="text-[#ECEDEE]">{summary?.b2csCount ?? 5}</strong>
+            <span className="text-[#5F6B7A]">·</span>
+            <span className="text-[#5F6B7A]">
+              B2CS <strong className="text-[#111418]">{summary?.b2csCount ?? 5}</strong>
             </span>
-            <span className="text-[#9BA1A6]">·</span>
-            <span className="flex items-center gap-1 font-medium text-[#F5A524]">
-              <AlertTriangle className="h-3.5 w-3.5" />
+            <span className="text-[#5F6B7A]">·</span>
+            <span className="flex items-center gap-1 font-semibold text-[#9E6400]">
+              <AlertTriangle className="h-3.5 w-3.5 text-[#F5A524]" />
               {summary?.flagCount ?? 3} flags
             </span>
           </div>
@@ -290,7 +290,7 @@ export function InvoiceReviewTable({
               variant="outline"
               size="sm"
               onClick={handleConfirmAllGreen}
-              className="text-xs h-8 border-[#17C964]/30 text-[#17C964] hover:bg-[#17C964]/10 shrink-0"
+              className="text-xs h-8 border-[#17C964]/40 text-[#0F8C43] hover:bg-[#17C964]/10 shrink-0 font-medium"
             >
               <Check className="h-3.5 w-3.5 mr-1.5" />
               Confirm all green rows
@@ -300,7 +300,7 @@ export function InvoiceReviewTable({
               variant="ghost"
               size="sm"
               onClick={fetchInvoices}
-              className="h-8 px-2 text-[#9BA1A6] hover:text-white"
+              className="h-8 px-2 text-[#5F6B7A] hover:text-[#111418]"
               title="Refresh table"
             >
               <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
@@ -315,10 +315,10 @@ export function InvoiceReviewTable({
               type="button"
               onClick={() => setActiveTab('ALL')}
               className={cn(
-                'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors shrink-0',
+                'px-3.5 py-1.5 rounded-[10px] text-xs font-medium transition-colors shrink-0 cursor-pointer',
                 activeTab === 'ALL'
-                  ? 'bg-[#1A2029] text-white border border-[#232B36]'
-                  : 'text-[#9BA1A6] hover:text-[#ECEDEE]'
+                  ? 'bg-white text-[#111418] border border-[#E3E7EE] shadow-xs font-semibold'
+                  : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
               All ({invoices.length})
@@ -327,10 +327,10 @@ export function InvoiceReviewTable({
               type="button"
               onClick={() => setActiveTab('B2B')}
               className={cn(
-                'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors shrink-0',
+                'px-3.5 py-1.5 rounded-[10px] text-xs font-medium transition-colors shrink-0 cursor-pointer',
                 activeTab === 'B2B'
-                  ? 'bg-[#1A2029] text-white border border-[#232B36]'
-                  : 'text-[#9BA1A6] hover:text-[#ECEDEE]'
+                  ? 'bg-white text-[#111418] border border-[#E3E7EE] shadow-xs font-semibold'
+                  : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
               B2B ({summary?.b2bCount ?? 18})
@@ -339,10 +339,10 @@ export function InvoiceReviewTable({
               type="button"
               onClick={() => setActiveTab('B2CL')}
               className={cn(
-                'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors shrink-0',
+                'px-3.5 py-1.5 rounded-[10px] text-xs font-medium transition-colors shrink-0 cursor-pointer',
                 activeTab === 'B2CL'
-                  ? 'bg-[#1A2029] text-white border border-[#232B36]'
-                  : 'text-[#9BA1A6] hover:text-[#ECEDEE]'
+                  ? 'bg-white text-[#111418] border border-[#E3E7EE] shadow-xs font-semibold'
+                  : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
               B2C Large ({summary?.b2clCount ?? 1})
@@ -351,10 +351,10 @@ export function InvoiceReviewTable({
               type="button"
               onClick={() => setActiveTab('B2CS')}
               className={cn(
-                'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors shrink-0',
+                'px-3.5 py-1.5 rounded-[10px] text-xs font-medium transition-colors shrink-0 cursor-pointer',
                 activeTab === 'B2CS'
-                  ? 'bg-[#1A2029] text-white border border-[#232B36]'
-                  : 'text-[#9BA1A6] hover:text-[#ECEDEE]'
+                  ? 'bg-white text-[#111418] border border-[#E3E7EE] shadow-xs font-semibold'
+                  : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
               B2C Small ({summary?.b2csCount ?? 5})
@@ -363,35 +363,35 @@ export function InvoiceReviewTable({
               type="button"
               onClick={() => setActiveTab('FLAGS')}
               className={cn(
-                'px-3 py-1.5 rounded-[8px] text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0',
+                'px-3.5 py-1.5 rounded-[10px] text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer',
                 activeTab === 'FLAGS'
-                  ? 'bg-[#F5A524]/15 text-[#F5A524] border border-[#F5A524]/30'
-                  : 'text-[#F5A524] hover:bg-[#F5A524]/10'
+                  ? 'bg-[#FDF6E4] text-[#9E6400] border border-[#F5A524]/30 shadow-xs font-semibold'
+                  : 'text-[#9E6400] hover:bg-[#FDF6E4]'
               )}
             >
-              <AlertTriangle className="h-3 w-3" />
+              <AlertTriangle className="h-3 w-3 text-[#F5A524]" />
               Needs Review ({summary?.flagCount ?? 3})
             </button>
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9BA1A6]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#5F6B7A]" />
             <input
               type="text"
               placeholder="Search bill no, customer, HSN…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-[8px] bg-[#11141A] border border-[#232B36] text-xs text-[#ECEDEE] placeholder:text-[#9BA1A6] focus:outline-none focus:border-[#F5A524]"
+              className="w-full pl-9 pr-3 py-1.5 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs text-[#111418] placeholder:text-[#5F6B7A] focus:outline-none focus:border-[#F5A524] focus:bg-white"
             />
           </div>
         </div>
 
         {/* Table Container */}
-        <div className="rounded-[16px] border border-[#232B36] bg-[#11141A] overflow-hidden shadow-sm">
+        <div className="rounded-[16px] border border-[#E3E7EE] bg-white overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-[#232B36] bg-[#161B22]/80 text-[#9BA1A6] uppercase tracking-wider font-semibold">
+                <tr className="border-b border-[#E3E7EE] bg-[#F6F7F9] text-[#5F6B7A] uppercase tracking-wider font-semibold">
                   <th className="py-3 px-4">Bill no.</th>
                   <th className="py-3 px-3">Date</th>
                   <th className="py-3 px-4">Customer</th>
@@ -404,17 +404,17 @@ export function InvoiceReviewTable({
                   <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#232B36]">
+              <tbody className="divide-y divide-[#E3E7EE]">
                 {loading ? (
                   <tr>
-                    <td colSpan={10} className="py-12 text-center text-[#9BA1A6]">
+                    <td colSpan={10} className="py-12 text-center text-[#5F6B7A]">
                       <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2 text-[#F5A524]" />
                       Loading invoice records…
                     </td>
                   </tr>
                 ) : filteredInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-12 text-center text-[#9BA1A6]">
+                    <td colSpan={10} className="py-12 text-center text-[#5F6B7A]">
                       No invoices match the selected filter.
                     </td>
                   </tr>
@@ -444,30 +444,30 @@ export function InvoiceReviewTable({
                         key={inv.id}
                         onClick={() => handleRowClick(inv)}
                         className={cn(
-                          'hover:bg-[#161B22] transition-colors cursor-pointer group',
+                          'hover:bg-[#F6F7F9] transition-colors cursor-pointer group',
                           inv.status === 'red' && 'bg-[#F31260]/5',
                           inv.status === 'amber' && 'bg-[#F5A524]/5'
                         )}
                       >
                         {/* Bill No */}
-                        <td className="py-3 px-4 font-mono font-medium text-white flex items-center gap-1.5">
+                        <td className="py-3 px-4 font-mono font-medium text-[#111418] flex items-center gap-1.5">
                           <span>{inv.inum}</span>
                           {inv.correctedByUser && (
-                            <Badge variant="blue" className="text-[9px] px-1 py-0">
+                            <Badge variant="blue" className="text-[9px] px-1.5 py-0">
                               Edited
                             </Badge>
                           )}
                         </td>
 
                         {/* Date */}
-                        <td className="py-3 px-3 text-[#ECEDEE] whitespace-nowrap">
+                        <td className="py-3 px-3 text-[#111418] whitespace-nowrap">
                           {inv.idt}
                         </td>
 
                         {/* Customer */}
-                        <td className="py-3 px-4 text-[#ECEDEE] max-w-[180px] truncate">
+                        <td className="py-3 px-4 text-[#111418] max-w-[180px] truncate">
                           {inv.ctinName || (
-                            <span className="text-[#9BA1A6] italic">Unregistered consumer</span>
+                            <span className="text-[#5F6B7A] italic">Unregistered consumer</span>
                           )}
                         </td>
 
@@ -477,7 +477,7 @@ export function InvoiceReviewTable({
                             hasGstinIssue ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-[#F31260]/20 text-[#F31260] border border-[#F31260]/40">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-[#F31260]/10 text-[#C70E4E] border border-[#F31260]/20">
                                     GSTIN?
                                   </span>
                                 </TooltipTrigger>
@@ -488,13 +488,13 @@ export function InvoiceReviewTable({
                             ) : (
                               <span className="text-[#17C964] flex items-center gap-1">
                                 <Check className="h-3 w-3 stroke-[3]" />
-                                <span className="text-[11px] text-[#9BA1A6]">
-                                  {inv.ctin ? `${inv.ctin.substring(0, 2)}...` : '✓'}
+                                <span className="text-[11px] text-[#5F6B7A]">
+                                  {inv.ctin ? `${inv.ctin.substring(0, 2)}...` : <Check className="h-3 w-3 inline text-[#17C964]" />}
                                 </span>
                               </span>
                             )
                           ) : (
-                            <span className="text-[#9BA1A6] text-[11px]">
+                            <span className="text-[#5F6B7A] text-[11px]">
                               {inv.section}
                             </span>
                           )}
@@ -505,7 +505,7 @@ export function InvoiceReviewTable({
                           {hasHsnIssue ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-[#F31260]/20 text-[#F31260] border border-[#F31260]/40">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-[#F31260]/10 text-[#C70E4E] border border-[#F31260]/20">
                                   {firstItem.hsn || 'MISSING'} HSN?
                                 </span>
                               </TooltipTrigger>
@@ -514,12 +514,12 @@ export function InvoiceReviewTable({
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-[#ECEDEE]">{firstItem.hsn || '8471'}</span>
+                            <span className="text-[#111418]">{firstItem.hsn || '8471'}</span>
                           )}
                         </td>
 
                         {/* Taxable */}
-                        <td className="py-3 px-3 text-right font-medium text-white">
+                        <td className="py-3 px-3 text-right font-medium text-[#111418] tabular-nums">
                           ₹{inv.totals?.txval.toLocaleString('en-IN')}
                         </td>
 
@@ -528,7 +528,7 @@ export function InvoiceReviewTable({
                           {hasRateMismatch ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-[#F5A524]/20 text-[#F5A524] border border-[#F5A524]/40">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-[#F5A524]/10 text-[#9E6400] border border-[#F5A524]/25">
                                   {firstItem.rt}% RATE?
                                 </span>
                               </TooltipTrigger>
@@ -538,12 +538,12 @@ export function InvoiceReviewTable({
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-[#ECEDEE]">{firstItem.rt}%</span>
+                            <span className="text-[#111418]">{firstItem.rt}%</span>
                           )}
                         </td>
 
                         {/* Tax */}
-                        <td className="py-3 px-3 text-right font-medium text-[#ECEDEE]">
+                        <td className="py-3 px-3 text-right font-medium text-[#111418] tabular-nums">
                           ₹{inv.totals?.totalTax.toLocaleString('en-IN')}
                         </td>
 
@@ -551,19 +551,19 @@ export function InvoiceReviewTable({
                         <td className="py-3 px-3 text-center">
                           {inv.status === 'green' && (
                             <span
-                              className="inline-block h-2.5 w-2.5 rounded-full bg-[#17C964] shadow-[0_0_8px_rgba(23,201,100,0.6)]"
+                              className="inline-block h-2.5 w-2.5 rounded-full bg-[#17C964]"
                               title="Verified & Ready"
                             />
                           )}
                           {inv.status === 'amber' && (
                             <span
-                              className="inline-block h-2.5 w-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)]"
+                              className="inline-block h-2.5 w-2.5 rounded-full bg-[#F5A524]"
                               title="Advisory Warning"
                             />
                           )}
                           {inv.status === 'red' && (
                             <span
-                              className="inline-block h-2.5 w-2.5 rounded-full bg-[#F31260] shadow-[0_0_8px_rgba(243,18,96,0.6)]"
+                              className="inline-block h-2.5 w-2.5 rounded-full bg-[#F31260]"
                               title="Blocking Error"
                             />
                           )}
@@ -577,7 +577,7 @@ export function InvoiceReviewTable({
                               e.stopPropagation();
                               handleRowClick(inv);
                             }}
-                            className="inline-flex items-center gap-1 text-[#F5A524] hover:underline font-medium text-[11px]"
+                            className="inline-flex items-center gap-1 text-[#9E6400] hover:underline font-medium text-[11px] cursor-pointer"
                           >
                             Review
                             <ChevronRight className="h-3 w-3" />
@@ -593,31 +593,31 @@ export function InvoiceReviewTable({
         </div>
 
         {/* Export Gate Footer Strip */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-[12px] bg-[#161B22] border border-[#232B36]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/20 shadow-xs">
           <div className="flex items-center gap-3">
             {redInvoicesCount > 0 ? (
-              <div className="flex items-center gap-2 text-xs text-[#ECEDEE]">
+              <div className="flex items-center gap-2 text-xs text-[#111418]">
                 <AlertOctagon className="h-4 w-4 text-[#F31260] shrink-0" />
                 <span>
                   Fix the{' '}
-                  <strong className="text-[#F31260] font-semibold">
+                  <strong className="text-[#C70E4E] font-semibold">
                     {redInvoicesCount} red rows
                   </strong>{' '}
                   above (or tick 'I have checked') to unlock GSTR-1 preparation.
                 </span>
-                <label className="flex items-center gap-1.5 ml-2 cursor-pointer text-[#F5A524]">
+                <label className="flex items-center gap-1.5 ml-2 cursor-pointer text-[#9E6400] font-medium">
                   <input
                     type="checkbox"
                     checked={acknowledgedRedRows}
                     onChange={(e) => setAcknowledgedRedRows(e.target.checked)}
-                    className="rounded border-[#232B36] text-[#F5A524] focus:ring-0"
+                    className="rounded border-[#E3E7EE] text-[#F5A524] focus:ring-0"
                   />
                   <span className="text-[11px]">I have checked</span>
                 </label>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs text-[#17C964]">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-2 text-xs text-[#0F8C43] font-medium">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#17C964]" />
                 <span>All {invoices.length} invoices verified. Ready to compile GSTR-1.</span>
               </div>
             )}
@@ -627,12 +627,8 @@ export function InvoiceReviewTable({
             type="button"
             onClick={onProceedToGstr1}
             disabled={!canProceed}
-            className={cn(
-              'font-semibold text-xs sm:text-sm px-5 py-2 shrink-0 transition-all',
-              canProceed
-                ? 'bg-[#F5A524] hover:bg-[#D98E18] text-black shadow-md cursor-pointer'
-                : 'bg-[#232B36] text-[#9BA1A6] cursor-not-allowed'
-            )}
+            variant="primary"
+            className="text-xs sm:text-sm px-5 py-2 shrink-0 font-medium"
           >
             Generate GSTR-1 →
           </Button>
@@ -641,11 +637,11 @@ export function InvoiceReviewTable({
         {/* §9.4 Review Drawer (Right Slide-over Panel) */}
         {drawerOpen && selectedInvoice && (
           <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in-0 duration-200">
-            <div className="relative w-full max-w-2xl bg-[#0D1017] border-l border-[#232B36] h-full shadow-2xl flex flex-col overflow-hidden">
+            <div className="relative w-full max-w-2xl bg-white border-l border-[#E3E7EE] h-full shadow-2xl flex flex-col overflow-hidden text-[#111418]">
               {/* Drawer Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#232B36] bg-[#11141A]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#E3E7EE] bg-white">
                 <div>
-                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                  <h3 className="text-base font-semibold text-[#111418] flex items-center gap-2">
                     <span>Invoice {selectedInvoice.inum}</span>
                     <Badge
                       variant={
@@ -661,9 +657,9 @@ export function InvoiceReviewTable({
                       {selectedInvoice.status.toUpperCase()}
                     </Badge>
                   </h3>
-                  <p className="text-xs text-[#9BA1A6]">
+                  <p className="text-xs text-[#5F6B7A]">
                     Parsed via Document AI asia-south1 · Confidence:{' '}
-                    <strong className="text-white">
+                    <strong className="text-[#111418]">
                       {((selectedInvoice.docAiConfidence || 0.95) * 100).toFixed(0)}%
                     </strong>
                   </p>
@@ -671,7 +667,7 @@ export function InvoiceReviewTable({
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
-                  className="rounded-lg p-1.5 text-[#9BA1A6] hover:bg-[#1A2029] hover:text-white"
+                  className="rounded-lg p-1.5 text-[#5F6B7A] hover:bg-[#F0F2F5] hover:text-[#111418] cursor-pointer"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -680,62 +676,62 @@ export function InvoiceReviewTable({
               {/* Drawer Body (Scrollable) */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* Visual Document Mock Preview */}
-                <div className="rounded-[12px] border border-[#232B36] bg-[#161B22] p-4 text-xs font-mono text-[#9BA1A6] space-y-3">
-                  <div className="flex items-center justify-between border-b border-[#232B36] pb-2 text-[11px] text-[#ECEDEE]">
+                <div className="rounded-[12px] border border-[#E3E7EE] bg-[#F6F7F9] p-4 text-xs font-mono text-[#5F6B7A] space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#E3E7EE] pb-2 text-[11px] text-[#111418]">
                     <span className="font-sans font-medium flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5 text-[#F5A524]" />
                       Original Document Scan Preview
                     </span>
-                    <span className="text-[10px] text-[#9BA1A6]">
+                    <span className="text-[10px] text-[#5F6B7A]">
                       {selectedInvoice.source?.filename || `${selectedInvoice.inum}.pdf`}
                     </span>
                   </div>
 
                   {/* Simulated Bill Layout with Bounding Boxes */}
-                  <div className="p-3 rounded bg-[#0D1017] border border-[#232B36] space-y-2 text-[11px]">
+                  <div className="p-3.5 rounded-[10px] bg-white border border-[#E3E7EE] space-y-2 text-[11px] shadow-xs">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-semibold text-white">SHARMA TRADERS</p>
-                        <p className="text-[10px] text-[#9BA1A6]">GSTIN: 06ABCDE1234F1Z5 · Haryana</p>
+                        <p className="font-semibold text-[#111418]">SHARMA TRADERS</p>
+                        <p className="text-[10px] text-[#5F6B7A]">GSTIN: 06ABCDE1234F1Z5 · Haryana</p>
                       </div>
-                      <div className="text-right border border-[#17C964]/40 bg-[#17C964]/10 px-2 py-0.5 rounded">
-                        <span className="text-[#17C964] font-semibold">{selectedInvoice.inum}</span>
-                        <div className="text-[9px] text-[#9BA1A6]">{selectedInvoice.idt}</div>
+                      <div className="text-right border border-[#17C964]/30 bg-[#17C964]/10 px-2 py-0.5 rounded">
+                        <span className="text-[#0F8C43] font-semibold">{selectedInvoice.inum}</span>
+                        <div className="text-[9px] text-[#5F6B7A]">{selectedInvoice.idt}</div>
                       </div>
                     </div>
 
-                    <div className="border-t border-[#232B36] pt-2">
-                      <div className="text-[10px] text-[#9BA1A6]">Billed To:</div>
-                      <div className="text-white font-medium">{drawerForm.ctinName || 'Walk-in Retail'}</div>
+                    <div className="border-t border-[#E3E7EE] pt-2">
+                      <div className="text-[10px] text-[#5F6B7A]">Billed To:</div>
+                      <div className="text-[#111418] font-medium">{drawerForm.ctinName || 'Walk-in Retail'}</div>
                       <div
                         className={cn(
                           'text-[10px] font-mono mt-0.5 px-1.5 py-0.5 rounded inline-block',
                           drawerForm.ctin
-                            ? 'border border-[#17C964]/30 bg-[#17C964]/10 text-[#17C964]'
-                            : 'text-[#9BA1A6]'
+                            ? 'border border-[#17C964]/30 bg-[#17C964]/10 text-[#0F8C43]'
+                            : 'text-[#5F6B7A]'
                         )}
                       >
                         GSTIN: {drawerForm.ctin || 'None (Consumer)'}
                       </div>
                     </div>
 
-                    <div className="border-t border-[#232B36] pt-2 flex justify-between items-center text-[10px]">
-                      <span>HSN: <strong className="text-white">{drawerForm.hsn}</strong></span>
-                      <span>Rate: <strong className="text-white">{drawerForm.rt}%</strong></span>
-                      <span>Total: <strong className="text-white">₹{(drawerForm.txval * (1 + drawerForm.rt / 100)).toLocaleString('en-IN')}</strong></span>
+                    <div className="border-t border-[#E3E7EE] pt-2 flex justify-between items-center text-[10px]">
+                      <span>HSN: <strong className="text-[#111418]">{drawerForm.hsn}</strong></span>
+                      <span>Rate: <strong className="text-[#111418]">{drawerForm.rt}%</strong></span>
+                      <span>Total: <strong className="text-[#111418] tabular-nums">₹{(drawerForm.txval * (1 + drawerForm.rt / 100)).toLocaleString('en-IN')}</strong></span>
                     </div>
                   </div>
                 </div>
 
                 {/* Flags Warning Box */}
                 {selectedInvoice.flags && selectedInvoice.flags.length > 0 && (
-                  <div className="p-3.5 rounded-[10px] bg-[#F5A524]/10 border border-[#F5A524]/30 space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-[#F5A524]">
-                      <AlertTriangle className="h-4 w-4" />
+                  <div className="p-3.5 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/30 space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-[#9E6400]">
+                      <AlertTriangle className="h-4 w-4 text-[#F5A524]" />
                       <span>Review Flags Detected</span>
                     </div>
                     {selectedInvoice.flags.map((flg, idx) => (
-                      <p key={idx} className="text-xs text-[#ECEDEE] pl-6">
+                      <p key={idx} className="text-xs text-[#111418] pl-6">
                         • {flg.message}
                       </p>
                     ))}
@@ -744,66 +740,66 @@ export function InvoiceReviewTable({
 
                 {/* Form Fields with Confidence Bars */}
                 <div className="space-y-4">
-                  <h4 className="text-xs uppercase tracking-wider font-semibold text-[#9BA1A6]">
+                  <h4 className="text-xs uppercase tracking-wider font-semibold text-[#5F6B7A]">
                     Extracted Fields & Verification
                   </h4>
 
                   {/* Bill Number */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <label className="text-[#ECEDEE] font-medium">Invoice Number</label>
-                      <span className="text-[11px] text-[#17C964]">99% confidence</span>
+                      <label className="text-[#111418] font-medium">Invoice Number</label>
+                      <span className="text-[11px] text-[#0F8C43] font-medium">99% confidence</span>
                     </div>
                     <input
                       type="text"
                       value={drawerForm.inum}
                       onChange={(e) => setDrawerForm({ ...drawerForm, inum: e.target.value })}
-                      className="w-full px-3 py-2 rounded-[8px] bg-[#161B22] border border-[#232B36] text-xs font-mono text-white focus:outline-none focus:border-[#F5A524]"
+                      className="w-full px-3 py-2 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-mono text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white"
                     />
                   </div>
 
                   {/* Date */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <label className="text-[#ECEDEE] font-medium">Date (DD-MM-YYYY)</label>
-                      <span className="text-[11px] text-[#17C964]">98% confidence</span>
+                      <label className="text-[#111418] font-medium">Date (DD-MM-YYYY)</label>
+                      <span className="text-[11px] text-[#0F8C43] font-medium">98% confidence</span>
                     </div>
                     <input
                       type="text"
                       value={drawerForm.idt}
                       onChange={(e) => setDrawerForm({ ...drawerForm, idt: e.target.value })}
-                      className="w-full px-3 py-2 rounded-[8px] bg-[#161B22] border border-[#232B36] text-xs font-mono text-white focus:outline-none focus:border-[#F5A524]"
+                      className="w-full px-3 py-2 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-mono text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white"
                     />
                   </div>
 
                   {/* Customer Name */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <label className="text-[#ECEDEE] font-medium">Customer Name</label>
-                      <span className="text-[11px] text-[#17C964]">95% confidence</span>
+                      <label className="text-[#111418] font-medium">Customer Name</label>
+                      <span className="text-[11px] text-[#0F8C43] font-medium">95% confidence</span>
                     </div>
                     <input
                       type="text"
                       value={drawerForm.ctinName}
                       onChange={(e) => setDrawerForm({ ...drawerForm, ctinName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-[8px] bg-[#161B22] border border-[#232B36] text-xs text-white focus:outline-none focus:border-[#F5A524]"
+                      className="w-full px-3 py-2 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white"
                     />
                   </div>
 
                   {/* GSTIN */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <label className="text-[#ECEDEE] font-medium">Customer GSTIN</label>
+                      <label className="text-[#111418] font-medium">Customer GSTIN</label>
                       <span
                         className={cn(
-                          'text-[11px]',
+                          'text-[11px] font-medium',
                           selectedInvoice.flag?.code === 'GSTIN_INVALID'
-                            ? 'text-[#F31260]'
-                            : 'text-[#17C964]'
+                            ? 'text-[#C70E4E]'
+                            : 'text-[#0F8C43]'
                         )}
                       >
                         {selectedInvoice.flag?.code === 'GSTIN_INVALID'
-                          ? 'Format Mismatch ⚠'
+                          ? 'Format Mismatch'
                           : '96% confidence'}
                       </span>
                     </div>
@@ -815,10 +811,10 @@ export function InvoiceReviewTable({
                       }
                       placeholder="15-digit GSTIN (optional for B2C)"
                       className={cn(
-                        'w-full px-3 py-2 rounded-[8px] bg-[#161B22] border text-xs font-mono text-white focus:outline-none',
+                        'w-full px-3 py-2 rounded-[10px] bg-[#F6F7F9] border text-xs font-mono text-[#111418] focus:outline-none focus:bg-white',
                         selectedInvoice.flag?.code === 'GSTIN_INVALID'
                           ? 'border-[#F31260] focus:border-[#F31260]'
-                          : 'border-[#232B36] focus:border-[#F5A524]'
+                          : 'border-[#E3E7EE] focus:border-[#F5A524]'
                       )}
                     />
                   </div>
@@ -826,35 +822,35 @@ export function InvoiceReviewTable({
                   {/* Grid for HSN, Taxable, Rate */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] text-[#ECEDEE] font-medium">HSN Code</label>
+                      <label className="text-[11px] text-[#111418] font-medium">HSN Code</label>
                       <input
                         type="text"
                         value={drawerForm.hsn}
                         onChange={(e) => setDrawerForm({ ...drawerForm, hsn: e.target.value })}
-                        className="w-full px-2.5 py-2 rounded-[8px] bg-[#161B22] border border-[#232B36] text-xs font-mono text-white focus:outline-none focus:border-[#F5A524]"
+                        className="w-full px-2.5 py-2 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-mono text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] text-[#ECEDEE] font-medium">Taxable (₹)</label>
+                      <label className="text-[11px] text-[#111418] font-medium">Taxable (₹)</label>
                       <input
                         type="number"
                         value={drawerForm.txval}
                         onChange={(e) =>
                           setDrawerForm({ ...drawerForm, txval: Number(e.target.value) })
                         }
-                        className="w-full px-2.5 py-2 rounded-[8px] bg-[#161B22] border border-[#232B36] text-xs font-mono text-white focus:outline-none focus:border-[#F5A524]"
+                        className="w-full px-2.5 py-2 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-mono text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] text-[#ECEDEE] font-medium">GST Rate %</label>
+                      <label className="text-[11px] text-[#111418] font-medium">GST Rate %</label>
                       <select
                         value={drawerForm.rt}
                         onChange={(e) =>
                           setDrawerForm({ ...drawerForm, rt: Number(e.target.value) })
                         }
-                        className="w-full px-2.5 py-2 rounded-[8px] bg-[#161B22] border border-[#232B36] text-xs font-mono text-white focus:outline-none focus:border-[#F5A524]"
+                        className="w-full px-2.5 py-2 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-mono text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white"
                       >
                         <option value={0}>0%</option>
                         <option value={5}>5%</option>
@@ -866,9 +862,9 @@ export function InvoiceReviewTable({
                   </div>
 
                   {/* Live Tax Summary in Drawer */}
-                  <div className="p-3 rounded-[8px] bg-[#161B22] border border-[#232B36] flex items-center justify-between text-xs">
-                    <span className="text-[#9BA1A6]">Calculated Tax:</span>
-                    <span className="font-semibold text-white">
+                  <div className="p-3 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] flex items-center justify-between text-xs">
+                    <span className="text-[#5F6B7A]">Calculated Tax:</span>
+                    <span className="font-semibold text-[#111418] tabular-nums">
                       ₹{Math.round((drawerForm.txval * drawerForm.rt) / 100).toLocaleString('en-IN')}
                     </span>
                   </div>
@@ -876,22 +872,23 @@ export function InvoiceReviewTable({
               </div>
 
               {/* Drawer Footer Actions */}
-              <div className="p-4 border-t border-[#232B36] bg-[#11141A] flex items-center justify-end gap-3">
+              <div className="p-4 border-t border-[#E3E7EE] bg-white flex items-center justify-end gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setDrawerOpen(false)}
-                  className="border-[#232B36] text-[#9BA1A6] hover:text-white"
+                  className="text-[#5F6B7A]"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="button"
                   size="sm"
+                  variant="primary"
                   onClick={handleSaveDrawerCorrection}
                   disabled={isUpdating}
-                  className="bg-[#F5A524] hover:bg-[#D98E18] text-black font-semibold"
+                  className="font-medium"
                 >
                   {isUpdating ? 'Validating…' : 'Save & Re-validate'}
                 </Button>
