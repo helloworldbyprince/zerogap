@@ -62,6 +62,11 @@ export default function SalesPage() {
     return () => controller.abort();
   }, [activeBusinessId, activePeriod]);
 
+  useEffect(() => {
+    // Demo records are a read-only showcase; uploads belong to real workspaces.
+    if (isDemo && currentStep === 0) setCurrentStep(1);
+  }, [isDemo, currentStep]);
+
   const redRows = invoices.filter((i) => i.status === 'red');
   const hasRedErrors = redRows.length > 0;
   const isDownloadUnlocked = !hasRedErrors || acknowledgedGate;
@@ -136,7 +141,7 @@ export default function SalesPage() {
 
         {/* Step Navigation Controls */}
         <div className="flex items-center gap-2">
-          {currentStep > 0 && (
+          {currentStep > 0 && !(isDemo && currentStep === 1) && (
             <Button
               type="button"
               variant="outline"
@@ -175,6 +180,7 @@ export default function SalesPage() {
           steps={steps}
           currentStepIndex={currentStep}
           onStepClick={(idx) => {
+            if (isDemo && idx === 0) return;
             setCurrentStep(idx);
             fetchInvoices();
           }}
@@ -227,16 +233,18 @@ export default function SalesPage() {
               </span>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentStep(0)}
-              className="text-xs h-8 border-[#E3E7EE] text-[#5F6B7A] hover:text-[#111418]"
-            >
-              <UploadCloud className="h-3.5 w-3.5 mr-1.5" />
-              Upload more bills
-            </Button>
+            {!isDemo && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentStep(0)}
+                className="text-xs h-8 border-[#E3E7EE] text-[#5F6B7A] hover:text-[#111418]"
+              >
+                <UploadCloud className="h-3.5 w-3.5 mr-1.5" />
+                Upload more bills
+              </Button>
+            )}
           </div>
 
           <InvoiceReviewTable
