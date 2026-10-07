@@ -81,3 +81,36 @@ export async function GET() {
     );
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const bizId = z.string().min(1).parse(body.bizId);
+    if (bizId === DEMO_BIZ_ID) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: 'Demo business is read-only.' } }, { status: 400 });
+    const parsed = BusinessSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: parsed.error.issues[0]?.message || 'Validation failed' } }, { status: 400 });
+    const existing = memoryStore.businesses.get(bizId);
+    if (!existing) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Business not found.' } }, { status: 404 });
+    const updated = { ...existing, ...parsed.data, updatedAt: new Date().toISOString() };
+    memoryStore.businesses.set(bizId, updated);
+    const db = getFirestoreDb();
+    if (db) await db.collection('businesses').doc(bizId).set(updated, { merge: true });
+    return NextResponse.json({ business: updated });
+  } catch (error: any) {
+    return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: error.message || 'Could not update business.' } }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const bizId = new URL(req.url).searchParams.get('bizId');
+    if (!bizId) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: 'bizId is required.' } }, { status: 400 });
+    if (bizId === DEMO_BIZ_ID) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: 'Demo business data cannot be deleted.' } }, { status: 400 });
+    for (const store of [memoryStore.periods, memoryStore.jobs, memoryStore.invoices, memoryStore.purchases, memoryStore.gstr2b, memoryStore.reco]) {
+      for (const [key, value] of store.entries()) if (value?.bizId === bizId) store.delete(key);
+    }
+    return NextResponse.json({ deleted: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: error.message || 'Could not delete business data.' } }, { status: 500 });
+  }
+}

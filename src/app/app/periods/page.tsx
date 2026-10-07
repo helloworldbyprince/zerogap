@@ -5,19 +5,11 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CONFIG } from '@/lib/config';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useWorkspace } from '@/lib/WorkspaceContext';
 import {
-  Calendar,
   TrendingUp,
-  Scale,
-  CheckCircle2,
-  AlertTriangle,
   Info,
-  BarChart3,
-  Layers,
-  ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import {
   LineChart,
@@ -45,59 +37,27 @@ interface PeriodRow {
 
 export default function PeriodsPage() {
   const { lang } = useLanguage();
+  const { activeBusinessId, isDemo } = useWorkspace();
   const isHi = lang === 'hi';
   const [activeTab, setActiveTab] = useState<PeriodTab>('month');
 
-  const [monthlyData, setMonthlyData] = useState<PeriodRow[]>([
-    {
-      period: '202607',
-      periodLabel: 'July 2026',
-      salesTax: 124500,
-      itcAvailable: 112000,
-      itcClaimed: 112000,
-      gap: 0,
-      status: 'green',
-      statusLabel: isHi ? 'सब सही' : 'All clear',
-    },
-    {
-      period: '202608',
-      periodLabel: 'August 2026',
-      salesTax: 138900,
-      itcAvailable: 128400,
-      itcClaimed: 129000,
-      gap: 600,
-      status: 'amber',
-      statusLabel: isHi ? 'छोटा अंतर: ₹600' : 'Minor gap: ₹600',
-    },
-    {
-      period: '202609',
-      periodLabel: 'September 2026',
-      salesTax: CONFIG.demo.salesTax, // 151560
-      itcAvailable: CONFIG.demo.itcAvailable2B, // 142300
-      itcClaimed: CONFIG.demo.itcAvailable2B + CONFIG.demo.creditCheckGap, // 144600
-      gap: CONFIG.demo.creditCheckGap, // 2300
-      status: 'red',
-      statusLabel: isHi ? 'कार्रवाई आवश्यक: ₹2,300' : 'Action needed: ₹2,300',
-    },
-  ]);
+  const [monthlyData, setMonthlyData] = useState<PeriodRow[]>([]);
 
-  // Fetch live from BigQuery rollups API if available
+  // Fetch workspace-isolated historical period summaries.
   useEffect(() => {
     async function loadRollups() {
       try {
-        const res = await fetch('/api/periods');
+        const res = await fetch(`/api/periods?bizId=${encodeURIComponent(activeBusinessId)}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          if (data.monthly && data.monthly.length > 0) {
-            setMonthlyData(data.monthly);
-          }
+          setMonthlyData(data.monthly || []);
         }
       } catch (e) {
-        // Fallback to default realistic 3-month demo data
+        setMonthlyData([]);
       }
     }
     loadRollups();
-  }, []);
+  }, [activeBusinessId]);
 
   // Compute KPI totals
   const totalSalesTax = monthlyData.reduce((s, r) => s + r.salesTax, 0);
@@ -120,7 +80,7 @@ export default function PeriodsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold text-[#F5A524] tracking-wider uppercase">
-              Feature 4 · BigQuery Analytics & Multi-Period Audit
+              Feature 4 · Period Analytics & Multi-Period Audit
             </span>
             <Badge variant="blue" dot className="text-[11px]">
               {isHi ? 'वित्तीय वर्ष:' : 'Financial Year:'} FY 2026–27
@@ -131,8 +91,8 @@ export default function PeriodsPage() {
           </h1>
           <p className="text-sm text-[#5F6B7A] mt-0.5">
             {isHi
-              ? 'BigQuery द्वारा संचालित ऐतिहासिक डेटा। 3 महीनों का टैक्स और इनपुट क्रेडिट ट्रेंड, जो GSTR-9 में काम आता है।'
-              : 'Multi-period historical rollups powered by partitioned BigQuery tables. Feeds directly into your annual GSTR-9 filing.'}
+              ? 'सहेजी गई अवधियों का टैक्स और इनपुट क्रेडिट ट्रेंड, जो वार्षिक समीक्षा में काम आता है।'
+              : isDemo ? 'Synthetic three-month demo trend for exploring annual views.' : 'Historical totals from this business’s saved tax periods. Feeds into annual review.'}
           </p>
         </div>
 
@@ -256,11 +216,11 @@ export default function PeriodsPage() {
             <TrendingUp className="h-4 w-4 text-[#F5A524]" />
             <h3 className="font-semibold text-sm text-[#111418]">
               {isHi
-                ? 'टैक्स देनदारी बनाम इनपुट क्रेडिट ट्रेंड (BigQuery)'
+                ? 'टैक्स देनदारी बनाम इनपुट क्रेडिट ट्रेंड'
                 : 'Sales Tax vs ITC Claimed Across Periods'}
             </h3>
           </div>
-          <span className="text-[11px] text-[#5F6B7A]">Source: Partitioned BigQuery Rollup</span>
+          <span className="text-[11px] text-[#5F6B7A]">Source: {isDemo ? 'Synthetic demo rollup' : 'Saved workspace periods'}</span>
         </div>
 
         <div className="h-[280px] w-full">
@@ -338,7 +298,13 @@ export default function PeriodsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E3E7EE]">
-              {activeTab === 'quarter' ? (
+              {monthlyData.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-[#5F6B7A]">
+                    No saved periods for this business yet. Upload data and complete the Triangle Check to create period history.
+                  </td>
+                </tr>
+              ) : activeTab === 'quarter' ? (
                 <tr className="hover:bg-[#F6F7F9]">
                   <td className="py-3 px-4 font-semibold text-[#111418]">Q2 (Jul – Sep 2026)</td>
                   <td className="py-3 px-3 text-right font-medium tabular-nums text-[#111418]">

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CONFIG } from '@/lib/config';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useWorkspace } from '@/lib/WorkspaceContext';
 import {
   Building,
   Languages,
@@ -21,10 +21,11 @@ import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { lang, setLang, t } = useLanguage();
+  const { activeBusiness, activeBusinessId, isDemo } = useWorkspace();
   const isHi = lang === 'hi';
 
-  const [bizName, setBizName] = useState<string>(CONFIG.demo.businessName);
-  const [gstin, setGstin] = useState<string>('06ABCDE1234F1Z5');
+  const [bizName, setBizName] = useState<string>('');
+  const [gstin, setGstin] = useState<string>('');
   const [stateCode, setStateCode] = useState<string>('06');
   const [turnoverSlab, setTurnoverSlab] = useState<'UNDER_5CR' | 'OVER_5CR'>('UNDER_5CR');
 
@@ -33,6 +34,13 @@ export default function SettingsPage() {
   const [pendingSlab, setPendingSlab] = useState<'UNDER_5CR' | 'OVER_5CR'>('OVER_5CR');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState<string>('');
+
+  useEffect(() => {
+    setBizName(activeBusiness?.name || '');
+    setGstin(activeBusiness?.gstin || '');
+    setStateCode(activeBusiness?.stateCode || '06');
+    setTurnoverSlab(activeBusiness?.turnoverSlab || 'UNDER_5CR');
+  }, [activeBusiness]);
 
   const handleSlabChange = (newSlab: 'UNDER_5CR' | 'OVER_5CR') => {
     if (newSlab === turnoverSlab) return;
@@ -50,8 +58,13 @@ export default function SettingsPage() {
     );
   };
 
-  const handleSaveProfile = () => {
-    toast.success('Business profile updated successfully!');
+  const handleSaveProfile = async () => {
+    try {
+      const response = await fetch('/api/businesses', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bizId: activeBusinessId, name: bizName, gstin, stateCode, turnoverSlab }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || 'Could not update business');
+      toast.success('Business profile updated successfully!');
+    } catch (error: any) { toast.error(error.message || 'Could not update business'); }
   };
 
   const handleResetDemoData = async () => {
@@ -60,7 +73,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/reconcile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bizId: DEMO_BIZ_ID, period: CONFIG.demo.periodCode }),
+        body: JSON.stringify({ bizId: 'biz_sharma_traders_demo', period: '202609' }),
       });
       toast.success('Demo data restored to pristine state!');
     } catch (e) {
@@ -68,16 +81,17 @@ export default function SettingsPage() {
     }
   };
 
-  const DEMO_BIZ_ID = 'biz_sharma_traders_demo';
-
-  const handleDeleteAllData = () => {
+  const handleDeleteAllData = async () => {
     if (deleteConfirmText !== 'DELETE') {
       toast.error('Type "DELETE" exactly to confirm.');
       return;
     }
-    setShowDeleteModal(false);
-    setDeleteConfirmText('');
-    toast.success('All transactional data for this business cleared.');
+    try {
+      const response = await fetch(`/api/businesses?bizId=${encodeURIComponent(activeBusinessId)}`, { method: 'DELETE' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || 'Could not delete data');
+      setShowDeleteModal(false); setDeleteConfirmText(''); toast.success('All transactional data for this business cleared.');
+    } catch (error: any) { toast.error(error.message || 'Could not delete data'); }
   };
 
   return (
@@ -192,6 +206,7 @@ export default function SettingsPage() {
           <Button
             size="sm"
             onClick={handleSaveProfile}
+            disabled={isDemo}
             className="text-xs bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#1A1A1A] font-medium"
           >
             {isHi ? 'बदलाव सहेजें' : 'Save changes'}
@@ -211,7 +226,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-4 text-xs">
-          <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
+          {isDemo && <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
             <div>
               <span className="font-semibold text-[#111418] block">
                 {isHi ? 'डिफ़ॉल्ट भाषा (Language)' : 'Default Interface Language'}
@@ -246,7 +261,7 @@ export default function SettingsPage() {
                 हिन्दी (Hindi)
               </Button>
             </div>
-          </div>
+          </div>}
 
           <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
             <div>
@@ -294,6 +309,7 @@ export default function SettingsPage() {
             variant="outline"
             size="sm"
             onClick={() => setShowDeleteModal(true)}
+            disabled={isDemo}
             className="text-xs border-[#F31260]/40 text-[#F31260] hover:bg-[#F31260]/10 flex items-center gap-1.5 h-8 flex-shrink-0 cursor-pointer font-medium"
           >
             <Trash2 className="h-3.5 w-3.5" />

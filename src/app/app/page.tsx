@@ -74,6 +74,16 @@ export default function DashboardPage() {
     );
   }
 
+  const periodLabel = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(Number(activePeriod.slice(0, 4)), Number(activePeriod.slice(4, 6)) - 1, 1))
+  );
+  const completedSteps = data ? Object.values(data.status || {}).filter((status) => status === 'done').length : 0;
+  const moneyAtRisk = Number(data?.moneyAtRisk || 0);
+  const salesTaxableValue = Number(data?.totals?.salesTxval || 0);
+  const salesTax = Number(data?.totals?.salesTax || 0);
+  const matchScore = Number(data?.matchScore || 0);
+  const creditGap = Math.abs(Number(data?.triangle?.itcGap || 0));
+
   return (
     <div className="space-y-8 font-sans">
       {/* ─────────────────────────────────────────────────────────────
@@ -83,11 +93,11 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-[30px] font-semibold text-[#111418] tracking-[-0.02em]">
-              {CONFIG.demo.periodLabel}
+              {periodLabel}
             </h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#FDF6E4] text-[#9E6400] border border-[#F5A524]/30 shadow-xs">
               <span className="h-1.5 w-1.5 rounded-full bg-[#F5A524]" />
-              {CONFIG.demo.stepsCompleted} of {CONFIG.demo.totalSteps} steps completed
+              {completedSteps} of 3 steps completed
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#5F6B7A] mt-1">
@@ -96,7 +106,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Demo Clean State Toggle for Testing & Judges */}
-        <div className="flex items-center gap-2">
+        {isDemo && <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
@@ -107,7 +117,7 @@ export default function DashboardPage() {
           >
             {cleanState ? 'Show Issues Demo' : 'Simulate Clean State'}
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -138,7 +148,7 @@ export default function DashboardPage() {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="bg-white border-[#E3E7EE] text-[#111418] p-3 text-xs leading-relaxed max-w-xs shadow-lg">
-                      {formatRupees(CONFIG.demo.moneyAtRisk)} total Input Tax Credit is blocked because suppliers have not uploaded or filed their GSTR-1 returns. Claiming it in 3B triggers DRC-01C.
+                      {formatRupees(moneyAtRisk)} is currently marked at risk by this workspace’s reconciliation results.
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -146,10 +156,10 @@ export default function DashboardPage() {
 
               <div className="flex flex-wrap items-baseline gap-4">
                 <h2 className="text-5xl sm:text-[56px] font-semibold text-[#F31260] tabular-nums tracking-[-0.03em] leading-none">
-                  {formatRupees(CONFIG.demo.moneyAtRisk)}
+                  {formatRupees(moneyAtRisk)}
                 </h2>
                 <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F31260]/10 text-[#C70E4E] border border-[#F31260]/20">
-                  across {CONFIG.demo.mismatchCount} mismatches
+                  in the selected period
                 </span>
               </div>
 
@@ -180,7 +190,7 @@ export default function DashboardPage() {
                   {COPY.en.common.cleanState}
                 </h2>
                 <p className="text-sm text-[#5F6B7A] mt-0.5">
-                  GSTR-1, 2B, and 3B numbers are 100% balanced for {CONFIG.demo.periodLabel}. No notices expected.
+                  GSTR-1, 2B, and 3B numbers are balanced for {periodLabel}. No gaps are currently detected.
                 </p>
               </div>
             </div>
@@ -213,10 +223,10 @@ export default function DashboardPage() {
                 Sales → GSTR-1
               </h3>
               <p className="text-2xl font-semibold text-[#111418] tabular-nums mt-1">
-                {CONFIG.demo.salesBillsReady} bills ready
+                {isDemo ? CONFIG.demo.salesBillsReady : salesTax > 0 ? 'Uploaded bills ready' : 'No bills yet'}
               </p>
               <p className="text-xs text-[#5F6B7A] mt-1">
-                Taxable {formatRupees(CONFIG.demo.salesTaxableValue)} · Tax {formatRupees(CONFIG.demo.salesTax)}
+                Taxable {formatRupees(salesTaxableValue)} · Tax {formatRupees(salesTax)}
               </p>
             </div>
           </div>
@@ -249,10 +259,10 @@ export default function DashboardPage() {
                 Purchases vs 2B
               </h3>
               <p className="text-2xl font-semibold text-[#111418] tabular-nums mt-1">
-                Match score {CONFIG.demo.matchScore}%
+                Match score {matchScore}%
               </p>
               <p className="text-xs text-[#5F6B7A] mt-1">
-                41 matched · 14 flagged bills
+                {matchScore > 0 ? 'Based on the latest reconciliation' : 'Run matching after importing purchase data'}
               </p>
             </div>
           </div>
@@ -285,7 +295,7 @@ export default function DashboardPage() {
                 Triangle Check
               </h3>
               <p className="text-2xl font-semibold text-[#111418] tabular-nums mt-1">
-                {formatRupees(CONFIG.demo.creditCheckGap)} gap
+                {formatRupees(creditGap)} gap
               </p>
               <p className="text-xs text-[#5F6B7A] mt-1">
                 2B Credit vs 3B Claimed comparison
@@ -316,11 +326,11 @@ export default function DashboardPage() {
               Needs your attention (Top 3)
             </h3>
             <Link href="/app/purchases" className="text-xs font-medium text-[#9E6400] hover:underline">
-              View all 14 →
+              Open reconciliation →
             </Link>
           </div>
 
-          <div className="space-y-3">
+          {isDemo ? <div className="space-y-3">
             <div className="p-4 rounded-[14px] bg-white border border-[#E3E7EE] flex items-center justify-between shadow-xs">
               <div className="flex items-center gap-3">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#F31260] shrink-0" />
@@ -362,7 +372,7 @@ export default function DashboardPage() {
                 <p className="text-[10px] text-[#5F6B7A]">excess claim</p>
               </div>
             </div>
-          </div>
+          </div> : <div className="rounded-[14px] border border-[#E3E7EE] bg-white p-6 text-sm text-[#5F6B7A] shadow-xs">No issue details are available here yet. Run purchase reconciliation to generate this list.</div>}
         </div>
 
         {/* Right (Recent Activity) */}
@@ -377,8 +387,8 @@ export default function DashboardPage() {
                 <CheckCircle2 className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#111418]">24 sales bills processed</p>
-                <p className="text-[11px] text-[#5F6B7A]">Extracted via Document AI with 99.4% confidence</p>
+                <p className="text-xs font-semibold text-[#111418]">Sales data for {periodLabel}</p>
+                <p className="text-[11px] text-[#5F6B7A]">Tax compiled: {formatRupees(salesTax)}</p>
               </div>
             </div>
 
@@ -387,8 +397,8 @@ export default function DashboardPage() {
                 <FileCheck className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#111418]">GSTR-1 JSON schema compiled</p>
-                <p className="text-[11px] text-[#5F6B7A]">Ready for export · Tables 4A, 7, and HSN 12</p>
+                <p className="text-xs font-semibold text-[#111418]">GSTR-1 status</p>
+                <p className="text-[11px] text-[#5F6B7A]">{data?.status?.f1 === 'done' ? 'Sales processing completed' : 'Waiting for sales invoices'}</p>
               </div>
             </div>
 
@@ -397,8 +407,8 @@ export default function DashboardPage() {
                 <Clock className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#111418]">GSTR-2B file ingested</p>
-                <p className="text-[11px] text-[#5F6B7A]">41 of 45 invoices matched with purchase bills</p>
+                <p className="text-xs font-semibold text-[#111418]">Purchase reconciliation</p>
+                <p className="text-[11px] text-[#5F6B7A]">{matchScore > 0 ? `Latest match score: ${matchScore}%` : 'No completed match yet'}</p>
               </div>
             </div>
           </div>
