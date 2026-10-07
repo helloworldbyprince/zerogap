@@ -46,6 +46,19 @@ export function Dropzone({
   const [files, setFiles] = useState<FileJobStatus[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const waitForJob = async (jobId: string) => {
+    for (let attempt = 0; attempt < CONFIG.uploads.maxPollAttempts; attempt += 1) {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || 'Could not read upload progress');
+      const job = payload.job;
+      if (job?.status === 'done') return job;
+      if (job?.status === 'error') throw new Error(job.error || 'Invoice processing failed');
+      await new Promise((resolve) => setTimeout(resolve, CONFIG.uploads.jobPollMs));
+    }
+    throw new Error('Invoice processing timed out. You can safely retry this upload.');
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -111,6 +124,8 @@ export function Dropzone({
         throw new Error(data.error?.message || 'Upload failed');
       }
 
+      await waitForJob(data.jobId);
+
       // Simulate step-by-step Document AI progress for UX delight
       initialStatuses.forEach((fileStatus, idx) => {
         setTimeout(() => {
@@ -150,6 +165,7 @@ export function Dropzone({
       setTimeout(() => {
         setIsProcessing(false);
         toast.success(`Processed ${newFiles.length} bills with Document AI`);
+        onComplete?.();
       }, totalWait);
     } catch (err: any) {
       setIsProcessing(false);
@@ -207,6 +223,8 @@ export function Dropzone({
       if (!res.ok) {
         throw new Error('Failed to initiate sample upload');
       }
+      const data = await res.json();
+      await waitForJob(data.jobId);
 
       // Step-by-step progress animation
       sampleFiles.forEach((sample, idx) => {
@@ -246,6 +264,7 @@ export function Dropzone({
       setTimeout(() => {
         setIsProcessing(false);
         toast.success('Sample bills processed through Document AI!');
+        onComplete?.();
       }, 3500);
     } catch (err: any) {
       setIsProcessing(false);

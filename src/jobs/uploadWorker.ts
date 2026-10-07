@@ -95,6 +95,7 @@ export async function processUploadJob(
           items: extracted.items,
           totals: extracted.totals,
           docAiConfidence: extracted.docAiConfidence,
+          period,
         });
 
         const invId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;

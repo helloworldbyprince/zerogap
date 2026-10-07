@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CONFIG } from '@/lib/config';
 import { ArrowRight, CheckCircle2, ChevronLeft, HelpCircle, Sparkles, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
+import { WORKSPACE_STORAGE_KEYS } from '@/lib/WorkspaceContext';
 
 const INDIAN_STATES = [
   { code: '06', name: '06 - Haryana' },
@@ -37,6 +38,8 @@ function OnboardingContent() {
   useEffect(() => {
     // If opened with ?demo=1, show quick toast and redirect to demo dashboard
     if (isDemoParam) {
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.business, 'biz_sharma_traders_demo');
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.period, CONFIG.demo.periodCode);
       toast.success('Demo business and records loaded successfully!');
       router.push('/app');
     }
@@ -68,13 +71,15 @@ function OnboardingContent() {
 
   const handleFinishOnboarding = async (loadDemo: boolean) => {
     if (loadDemo) {
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.business, 'biz_sharma_traders_demo');
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.period, period);
       toast.success('Seeded demo reconciliation data!');
       router.push('/app');
       return;
     }
 
     try {
-      await fetch('/api/businesses', {
+      const response = await fetch('/api/businesses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,10 +89,14 @@ function OnboardingContent() {
           stateCode,
         }),
       });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || 'Could not create business profile');
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.business, payload.bizId);
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.period, period);
       toast.success('Business profile created!');
       router.push('/app/sales');
-    } catch {
-      router.push('/app');
+    } catch (error: any) {
+      toast.error(error.message || 'Could not create business profile. Please try again.');
     }
   };
 

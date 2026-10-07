@@ -43,6 +43,7 @@ export interface ValidateInvoiceInput {
   };
   confidences?: Record<string, number>;
   docAiConfidence?: number;
+  period?: string; // YYYYMM
 }
 
 export interface ValidationResult {
@@ -75,13 +76,27 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
 
   // 2. Date Format Check (strictly DD-MM-YYYY)
   const dateRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
-  if (!input.idt || !dateRegex.test(input.idt)) {
+  const dateMatch = input.idt?.match(dateRegex);
+  const parsedDate = dateMatch
+    ? new Date(Date.UTC(Number(dateMatch[3]), Number(dateMatch[2]) - 1, Number(dateMatch[1])))
+    : null;
+  const isRealDate = !!(
+    dateMatch &&
+    parsedDate &&
+    parsedDate.getUTCFullYear() === Number(dateMatch[3]) &&
+    parsedDate.getUTCMonth() === Number(dateMatch[2]) - 1 &&
+    parsedDate.getUTCDate() === Number(dateMatch[1])
+  );
+  const invoicePeriod = dateMatch ? `${dateMatch[3]}${dateMatch[2]}` : '';
+  if (!isRealDate || (input.period && invoicePeriod !== input.period)) {
     flags.push({
       field: 'idt',
       code: 'DATE_INVALID',
       severity: 'error',
       pillLabel: 'DATE?',
-      message: `Date must be formatted as DD-MM-YYYY (got "${input.idt || 'empty'}")`,
+      message: !isRealDate
+        ? `Date must be a valid date formatted as DD-MM-YYYY (got "${input.idt || 'empty'}")`
+        : `Invoice date ${input.idt} is outside filing period ${input.period}`,
     });
   }
 
@@ -116,13 +131,13 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
       const hsnDigits = (item.hsn || '').replace(/\D/g, '');
 
       // HSN Digit count check
-      if (hsnDigits.length < minHsnDigits) {
+      if (hsnDigits.length < minHsnDigits || hsnDigits.length > 8 || hsnDigits !== item.hsn) {
         flags.push({
           field: 'hsn',
           code: 'HSN_INVALID_DIGITS',
           severity: 'error',
           pillLabel: 'HSN?',
-          message: `HSN ${item.hsn || 'blank'} has ${hsnDigits.length} digits. Min ${minHsnDigits} digits required for turnover ${turnoverSlab}.`,
+          message: `HSN must contain ${minHsnDigits}–8 digits for this turnover slab (got "${item.hsn || 'blank'}").`,
           expected: minHsnDigits,
           actual: hsnDigits.length,
         });
@@ -145,7 +160,7 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
       }
 
       // Tax Arithmetic check per item
-      const expectedTax = Math.round((item.txval * item.rt) / 100);
+      const expectedTax = Math.round(((item.txval * item.rt) / 100) * 100) / 100;
       const actualTax = (item.iamt || 0) + (item.camt || 0) + (item.samt || 0);
       const diff = Math.abs(expectedTax - actualTax);
 

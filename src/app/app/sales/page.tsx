@@ -23,8 +23,10 @@ import {
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWorkspace } from '@/lib/WorkspaceContext';
 
 export default function SalesPage() {
+  const { activeBusiness, activeBusinessId, activePeriod, isDemo } = useWorkspace();
   const [currentStep, setCurrentStep] = useState<number>(1); // Default to Step B (Review) for instant evaluation
   const [selectedTab, setSelectedTab] = useState<'b2b' | 'b2cl' | 'b2cs' | 'hsn' | 'docs'>('b2b');
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -40,7 +42,7 @@ export default function SalesPage() {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/invoices?bizId=biz_sharma_traders_demo&period=${CONFIG.demo.periodCode}&kind=sales`);
+      const res = await fetch(`/api/invoices?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&kind=sales`);
       const data = await res.json();
       if (data.invoices) {
         setInvoices(data.invoices);
@@ -54,7 +56,7 @@ export default function SalesPage() {
 
   useEffect(() => {
     fetchInvoices();
-  }, []);
+  }, [activeBusinessId, activePeriod]);
 
   const redRows = invoices.filter((i) => i.status === 'red');
   const hasRedErrors = redRows.length > 0;
@@ -67,7 +69,7 @@ export default function SalesPage() {
     }
 
     const bypassParam = acknowledgedGate ? '&bypassGate=true' : '';
-    const downloadUrl = `/api/gstr1/export?bizId=biz_sharma_traders_demo&period=${CONFIG.demo.periodCode}&format=${format}${bypassParam}`;
+    const downloadUrl = `/api/gstr1/export?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&format=${format}${bypassParam}`;
 
     const link = document.createElement('a');
     link.href = downloadUrl;
@@ -117,7 +119,7 @@ export default function SalesPage() {
               Feature 1 · Outward Supplies
             </span>
             <Badge variant="emerald" dot className="text-[11px]">
-              Active Period: {CONFIG.demo.periodLabel}
+              {isDemo ? 'Demo workspace' : activeBusiness?.name || 'Business'} · {activePeriod.slice(4, 6)}/{activePeriod.slice(0, 4)}
             </Badge>
           </div>
           <h1 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
@@ -201,8 +203,8 @@ export default function SalesPage() {
               setCurrentStep(1);
               fetchInvoices();
             }}
-            bizId="biz_sharma_traders_demo"
-            period={CONFIG.demo.periodCode}
+            bizId={activeBusinessId}
+            period={activePeriod}
             kind="sales"
           />
         </div>
@@ -238,8 +240,8 @@ export default function SalesPage() {
               setCurrentStep(2);
               fetchInvoices();
             }}
-            bizId="biz_sharma_traders_demo"
-            period={CONFIG.demo.periodCode}
+            bizId={activeBusinessId}
+            period={activePeriod}
           />
         </div>
       )}

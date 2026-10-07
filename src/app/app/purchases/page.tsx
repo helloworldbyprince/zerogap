@@ -185,7 +185,7 @@ export default function PurchasesPage() {
   useEffect(() => {
     async function loadReco() {
       try {
-        const res = await fetch(`/api/reconcile?bizId=${CONFIG.demo.businessName}&period=${CONFIG.demo.periodCode}`);
+        const res = await fetch(`/api/reconcile?bizId=biz_sharma_traders_demo&period=${CONFIG.demo.periodCode}`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.items && data.items.length > 0) {

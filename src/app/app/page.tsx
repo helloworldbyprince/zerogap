@@ -23,8 +23,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWorkspace } from '@/lib/WorkspaceContext';
 
 export default function DashboardPage() {
+  const { activeBusiness, activeBusinessId, activePeriod, isDemo } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [cleanState, setCleanState] = useState(false);
@@ -33,19 +35,19 @@ export default function DashboardPage() {
     async function fetchDashboard() {
       try {
         setLoading(true);
-        const res = await fetch('/api/dashboard');
+        const res = await fetch(`/api/dashboard?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`);
         const json = await res.json();
         if (json.period) {
           setData(json.period);
         }
       } catch (e) {
-        toast.error('Could not load period data, using cached demo data.');
+        toast.error('Could not load this workspace. Please retry.');
       } finally {
         setLoading(false);
       }
     }
     fetchDashboard();
-  }, []);
+  }, [activeBusinessId, activePeriod]);
 
   if (loading) {
     return (
@@ -57,6 +59,17 @@ export default function DashboardPage() {
           <div className="h-32 bg-white border border-[#E3E7EE] rounded-[16px]" />
           <div className="h-32 bg-white border border-[#E3E7EE] rounded-[16px]" />
         </div>
+      </div>
+    );
+  }
+
+  if (!data && !isDemo) {
+    return (
+      <div className="mx-auto max-w-2xl rounded-[16px] border border-[#E3E7EE] bg-white p-10 text-center shadow-xs">
+        <FileText className="mx-auto h-10 w-10 text-[#F5A524]" />
+        <h1 className="mt-4 text-xl font-semibold text-[#111418]">Your workspace is ready</h1>
+        <p className="mt-2 text-sm text-[#5F6B7A]">{activeBusiness?.name || 'This business'} has no data for this filing period yet. Upload sales bills to begin.</p>
+        <Button asChild className="mt-6"><Link href="/app/sales">Upload sales bills</Link></Button>
       </div>
     );
   }

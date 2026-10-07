@@ -24,6 +24,7 @@ function getBigQueryClient(): BigQuery | null {
   if (fs.existsSync(serviceAccountPath)) {
     process.env.GOOGLE_APPLICATION_CREDENTIALS = serviceAccountPath;
   }
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.K_SERVICE) return null;
 
   try {
     bqClient = new BigQuery({ projectId, location });

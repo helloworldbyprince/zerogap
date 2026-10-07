@@ -9,7 +9,9 @@ export type MismatchCause =
   | 'DUPLICATE_BOOKING'
   | 'PERIOD_SHIFT'
   | 'MISSING_IN_BOOKS'
-  | 'INELIGIBLE_17_5';
+  | 'INELIGIBLE_17_5'
+  | 'CREDIT_NOTE_PENDING'
+  | 'IMPORT_RCM';
 
 export interface ActionItem {
   id: string;
@@ -77,6 +79,7 @@ export function runReconciliation(
   const results: MismatchResult[] = [];
   const matched2bIds = new Set<string>();
   const bookedInumCounts = new Map<string, number>();
+  const seenBookKeys = new Set<string>();
 
   // Count occurrences in books to catch DUPLICATE_BOOKING
   for (const p of purchaseInvoices) {
@@ -95,7 +98,7 @@ export function runReconciliation(
     const pKey = `${pGstin}_${normP}`;
 
     // Check for duplicate in internal books
-    if ((bookedInumCounts.get(pKey) || 0) > 1) {
+    if ((bookedInumCounts.get(pKey) || 0) > 1 && seenBookKeys.has(pKey)) {
       results.push({
         id: `reco_dup_${inv.id}`,
         purchaseInvId: inv.id,
@@ -122,10 +125,11 @@ export function runReconciliation(
       });
       continue;
     }
+    seenBookKeys.add(pKey);
 
     // Try matching against GSTR-2B
     let matched2b = gstr2bRecords.find(
-      (b) => !matched2bIds.has(b.id) && normalizeInum(b.inum) === normP && b.supplierGstin === pGstin
+      (b) => !matched2bIds.has(b.id) && normalizeInum(b.inum) === normP && String(b.supplierGstin || '').trim().toUpperCase() === pGstin
     );
 
     // Secondary match: same invoice number across slightly different GSTIN or name
@@ -293,10 +297,7 @@ export function runReconciliation(
   const matchedCount = results.filter(
     (r) => r.cause === 'MATCHED' || r.cause === 'VALUE_MISMATCH'
   ).length;
-  const matchScore =
-    totalBills === CONFIG.demo.totalBillsCount
-      ? CONFIG.demo.matchScore
-      : Math.round((matchedCount / (totalBills > 0 ? totalBills : 1)) * 100);
+  const matchScore = Math.round((matchedCount / (totalBills > 0 ? totalBills : 1)) * 100);
   const moneyAtRisk = results.reduce((sum, r) => sum + r.amountAtRisk, 0);
 
   const missingIn2BCount = results.filter((r) => r.cause === 'SUPPLIER_NOT_FILED').length;

@@ -66,10 +66,10 @@ export async function PATCH(
       if (body.txval !== undefined) itm.txval = Number(body.txval);
 
       const isInterState = pos !== biz.stateCode;
-      const tax = Math.round((itm.txval * itm.rt) / 100);
+      const tax = Math.round(((itm.txval * itm.rt) / 100) * 100) / 100;
       itm.iamt = isInterState ? tax : 0;
-      itm.camt = isInterState ? 0 : Math.round(tax / 2);
-      itm.samt = isInterState ? 0 : tax - itm.camt;
+      itm.camt = isInterState ? 0 : Math.round((tax / 2) * 100) / 100;
+      itm.samt = isInterState ? 0 : Math.round((tax - itm.camt) * 100) / 100;
       itm.csamt = 0;
 
       items = [itm];
@@ -103,6 +103,7 @@ export async function PATCH(
       items,
       totals,
       docAiConfidence: existing.docAiConfidence,
+      period: existing.period,
     });
 
     const updatedInvoice = {

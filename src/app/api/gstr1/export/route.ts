@@ -10,14 +10,27 @@ export async function GET(req: NextRequest) {
     const period = searchParams.get('period') || DEMO_PERIOD;
     const format = (searchParams.get('format') || 'json').toLowerCase();
     const bypassGate = searchParams.get('bypassGate') === 'true';
+    if (!/^\d{4}(0[1-9]|1[0-2])$/.test(period)) {
+      return NextResponse.json(
+        { error: { code: 'VALIDATION_FAILED', message: 'period must be YYYYMM' } },
+        { status: 400 }
+      );
+    }
+    if (!['json', 'xlsx'].includes(format)) {
+      return NextResponse.json(
+        { error: { code: 'VALIDATION_FAILED', message: 'format must be json or xlsx' } },
+        { status: 400 }
+      );
+    }
 
     // 1. Fetch business
-    const business = memoryStore.businesses.get(bizId) || {
-      id: DEMO_BIZ_ID,
-      name: CONFIG.demo.businessName,
-      gstin: '06ABCDE1234F1Z5',
-      stateCode: '06',
-    };
+    const business = memoryStore.businesses.get(bizId);
+    if (!business) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: `Business ${bizId} not found` } },
+        { status: 404 }
+      );
+    }
 
     // 2. Fetch sales invoices
     let invoices: any[] = [];

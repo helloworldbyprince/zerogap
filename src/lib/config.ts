@@ -31,6 +31,8 @@ export const CONFIG = {
     maxFiles: 25,
     maxFileMB: 10,
     allowedTypes: ['pdf', 'jpg', 'jpeg', 'png'],
+    jobPollMs: 500,
+    maxPollAttempts: 120,
   },
   ui: {
     pageSize: 50,

@@ -18,6 +18,13 @@ function initAdmin(): App | null {
 
   const projectId = process.env.GCP_PROJECT_ID || 'zerogap-509816';
   const serviceAccountPath = path.resolve(process.cwd(), 'service-account.json');
+  const hasRuntimeCredentials = Boolean(
+    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+    process.env.K_SERVICE ||
+    process.env.FIRESTORE_EMULATOR_HOST ||
+    fs.existsSync(serviceAccountPath)
+  );
+  if (!hasRuntimeCredentials) return null;
 
   if (fs.existsSync(serviceAccountPath)) {
     try {
@@ -42,8 +49,20 @@ function initAdmin(): App | null {
 
 const adminApp = initAdmin();
 
-// In-memory cache/mock store for offline dev & instant demo reads
-const memoryStore = {
+// Keep one store across Next.js route bundles and hot reloads. A module-local
+// object causes /api/uploads and /api/jobs/:id to see different Maps in dev.
+type MemoryStore = {
+  businesses: Map<string, any>;
+  periods: Map<string, any>;
+  jobs: Map<string, any>;
+  invoices: Map<string, any>;
+  purchases: Map<string, any>;
+  gstr2b: Map<string, any>;
+  reco: Map<string, any>;
+};
+
+const processGlobal = globalThis as typeof globalThis & { __zeroGapMemoryStore?: MemoryStore };
+const memoryStore: MemoryStore = processGlobal.__zeroGapMemoryStore ?? {
   businesses: new Map<string, any>(),
   periods: new Map<string, any>(),
   jobs: new Map<string, any>(),
@@ -52,6 +71,7 @@ const memoryStore = {
   gstr2b: new Map<string, any>(),
   reco: new Map<string, any>(),
 };
+processGlobal.__zeroGapMemoryStore = memoryStore;
 
 // Seed demo business & period in memory as guaranteed fallback
 const DEMO_BIZ_ID = 'biz_sharma_traders_demo';

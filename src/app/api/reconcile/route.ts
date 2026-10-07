@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { memoryStore, getFirestoreDb, DEMO_BIZ_ID, DEMO_PERIOD } from '@/lib/firebase-admin';
 import { runReconciliation } from '@/lib/match';
 import { CONFIG } from '@/lib/config';
+import { z } from 'zod';
+
+const ReconcileSchema = z.object({
+  bizId: z.string().min(1),
+  period: z.string().regex(/^\d{4}(0[1-9]|1[0-2])$/),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -65,8 +71,17 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const bizId = body.bizId || DEMO_BIZ_ID;
-    const period = body.period || DEMO_PERIOD;
+    const parsed = ReconcileSchema.safeParse({
+      bizId: body.bizId || DEMO_BIZ_ID,
+      period: body.period || DEMO_PERIOD,
+    });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: { code: 'VALIDATION_FAILED', message: parsed.error.issues[0]?.message || 'Invalid reconciliation request' } },
+        { status: 400 }
+      );
+    }
+    const { bizId, period } = parsed.data;
 
     const jobId = `job_reco_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 

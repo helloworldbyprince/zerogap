@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { CONFIG } from '@/lib/config';
 import { LanguageProvider, useLanguage } from '@/lib/LanguageContext';
+import { WorkspaceProvider, useWorkspace } from '@/lib/WorkspaceContext';
 import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, User } from '@/lib/firebase';
 import {
   BarChart3,
@@ -33,8 +34,15 @@ function AppShellInner({ children }: AppShellProps) {
   const { lang, toggleLang, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedBusiness] = useState(CONFIG.demo.businessName);
-  const [selectedPeriod] = useState(CONFIG.demo.periodLabel);
+  const { businesses, activeBusiness, activeBusinessId, activePeriod, setActiveBusinessId, setActivePeriod } = useWorkspace();
+  const [businessMenuOpen, setBusinessMenuOpen] = useState(false);
+  const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
+  const periodOptions = [
+    { value: '202609', label: 'September 2026' },
+    { value: '202608', label: 'August 2026' },
+    { value: '202607', label: 'July 2026' },
+  ];
+  const selectedPeriod = periodOptions.find((option) => option.value === activePeriod)?.label || activePeriod;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -193,24 +201,46 @@ function AppShellInner({ children }: AppShellProps) {
             <div className="relative">
               <button
                 type="button"
+                onClick={() => { setBusinessMenuOpen((open) => !open); setPeriodMenuOpen(false); }}
+                aria-expanded={businessMenuOpen}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-medium text-[#111418] hover:border-[#CBD2DE] transition-colors"
               >
                 <span className="h-2 w-2 rounded-full bg-[#17C964]" />
-                <span className="truncate max-w-[130px] sm:max-w-[200px]">{selectedBusiness}</span>
+                <span className="truncate max-w-[130px] sm:max-w-[200px]">{activeBusiness?.name || 'Select business'}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-[#5F6B7A]" />
               </button>
+              {businessMenuOpen && (
+                <div className="absolute left-0 top-full mt-2 z-50 min-w-[260px] rounded-[12px] border border-[#E3E7EE] bg-white p-1.5 shadow-lg">
+                  {businesses.map((business) => (
+                    <button key={business.id} type="button" onClick={() => { setActiveBusinessId(business.id); setBusinessMenuOpen(false); }} className={`w-full rounded-[9px] px-3 py-2 text-left text-xs hover:bg-[#F6F7F9] ${business.id === activeBusinessId ? 'bg-[#FDF6E4] text-[#9E6400] font-semibold' : 'text-[#111418]'}`}>
+                      <span className="block">{business.name}</span>
+                      <span className="block mt-0.5 text-[10px] font-normal text-[#5F6B7A]">{business.id === 'biz_sharma_traders_demo' ? 'Demo workspace · synthetic data' : business.gstin}</span>
+                    </button>
+                  ))}
+                  <Link href="/onboarding" className="block mt-1 border-t border-[#E3E7EE] px-3 py-2 text-xs font-semibold text-[#9E6400] hover:bg-[#FDF6E4] rounded-[9px]">+ Add a business</Link>
+                </div>
+              )}
             </div>
 
             {/* Period Picker Dropdown */}
             <div className="relative hidden sm:block">
               <button
                 type="button"
+                onClick={() => { setPeriodMenuOpen((open) => !open); setBusinessMenuOpen(false); }}
+                aria-expanded={periodMenuOpen}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs font-medium text-[#111418] hover:border-[#CBD2DE] transition-colors"
               >
                 <Calendar className="h-3.5 w-3.5 text-[#F5A524]" />
                 <span>{selectedPeriod}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-[#5F6B7A]" />
               </button>
+              {periodMenuOpen && (
+                <div className="absolute left-0 top-full mt-2 z-50 min-w-[190px] rounded-[12px] border border-[#E3E7EE] bg-white p-1.5 shadow-lg">
+                  {periodOptions.map((option) => (
+                    <button key={option.value} type="button" onClick={() => { setActivePeriod(option.value); setPeriodMenuOpen(false); }} className={`w-full rounded-[9px] px-3 py-2 text-left text-xs hover:bg-[#F6F7F9] ${option.value === activePeriod ? 'bg-[#FDF6E4] text-[#9E6400] font-semibold' : 'text-[#111418]'}`}>{option.label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -306,7 +336,9 @@ function AppShellInner({ children }: AppShellProps) {
 export function AppShell({ children }: AppShellProps) {
   return (
     <LanguageProvider>
-      <AppShellInner>{children}</AppShellInner>
+      <WorkspaceProvider>
+        <AppShellInner>{children}</AppShellInner>
+      </WorkspaceProvider>
     </LanguageProvider>
   );
 }

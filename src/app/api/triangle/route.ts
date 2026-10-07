@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { memoryStore, getFirestoreDb, DEMO_BIZ_ID, DEMO_PERIOD } from '@/lib/firebase-admin';
 import { computeTriangleAudit, TriangleInput } from '@/lib/triangle';
 import { CONFIG } from '@/lib/config';
+import { z } from 'zod';
+
+const TriangleSchema = z.object({
+  bizId: z.string().min(1).optional(),
+  period: z.string().regex(/^\d{4}(0[1-9]|1[0-2])$/).optional(),
+  gstr1TaxLiability: z.coerce.number().finite().nonnegative().optional(),
+  gstr2bCreditAvailable: z.coerce.number().finite().nonnegative().optional(),
+  gstr3bTaxPaid: z.coerce.number().finite().nonnegative().optional(),
+  gstr3bItcClaimed: z.coerce.number().finite().nonnegative().optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,14 +62,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const bizId = body.bizId || DEMO_BIZ_ID;
-    const period = body.period || DEMO_PERIOD;
+    const parsed = TriangleSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: { code: 'VALIDATION_FAILED', message: parsed.error.issues[0]?.message || 'Invalid triangle figures' } },
+        { status: 400 }
+      );
+    }
+    const values = parsed.data;
+    const bizId = values.bizId || DEMO_BIZ_ID;
+    const period = values.period || DEMO_PERIOD;
 
     const input: TriangleInput = {
-      gstr1TaxLiability: body.gstr1TaxLiability !== undefined ? parseFloat(body.gstr1TaxLiability) : undefined,
-      gstr2bCreditAvailable: body.gstr2bCreditAvailable !== undefined ? parseFloat(body.gstr2bCreditAvailable) : undefined,
-      gstr3bTaxPaid: body.gstr3bTaxPaid !== undefined ? parseFloat(body.gstr3bTaxPaid) : undefined,
-      gstr3bItcClaimed: body.gstr3bItcClaimed !== undefined ? parseFloat(body.gstr3bItcClaimed) : undefined,
+      gstr1TaxLiability: values.gstr1TaxLiability,
+      gstr2bCreditAvailable: values.gstr2bCreditAvailable,
+      gstr3bTaxPaid: values.gstr3bTaxPaid,
+      gstr3bItcClaimed: values.gstr3bItcClaimed,
       bizId,
       period,
     };

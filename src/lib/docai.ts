@@ -1,4 +1,6 @@
 import { CONFIG } from './config';
+import fs from 'fs';
+import path from 'path';
 
 export interface ExtractedLineItem {
   num: number;
@@ -77,9 +79,14 @@ export async function parseInvoiceWithDocAI(
   const projectId = process.env.GCP_PROJECT_ID || 'zerogap-509816';
   const location = process.env.DOCAI_LOCATION || CONFIG.region; // asia-south1
   const processorId = process.env.DOCAI_PROCESSOR_ID || '45ff58249590c913';
+  const hasRuntimeCredentials = Boolean(
+    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+    process.env.K_SERVICE ||
+    fs.existsSync(path.resolve(process.cwd(), 'service-account.json'))
+  );
 
   // Try real Document AI client if processorId exists
-  if (processorId && processorId !== 'placeholder') {
+  if (hasRuntimeCredentials && processorId && processorId !== 'placeholder') {
     try {
       const { DocumentProcessorServiceClient } = await import('@google-cloud/documentai');
       const client = new DocumentProcessorServiceClient({

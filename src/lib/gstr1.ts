@@ -17,7 +17,9 @@ export interface Gstr1Summary {
  * Format filing period from YYYYMM (e.g. 202609) to official GSTN MMYYYY (e.g. 092026)
  */
 export function formatPeriodToFp(periodCode: string): string {
-  if (!periodCode || periodCode.length !== 6) return '092026';
+  if (!/^\d{4}(0[1-9]|1[0-2])$/.test(periodCode)) {
+    throw new Error('Filing period must be YYYYMM');
+  }
   const year = periodCode.substring(0, 4);
   const month = periodCode.substring(4, 6);
   return `${month}${year}`;
@@ -203,10 +205,8 @@ export function buildGstr1Json(invoices: any[], business: any, period: string) {
 
   // Format HSN output
   const hsnOutput: any[] = [];
-  let hsnIndex = 1;
   for (const hsnItem of hsnMap.values()) {
     hsnOutput.push({
-      num: hsnIndex++,
       hsn_sc: hsnItem.hsn_sc,
       desc: hsnItem.desc,
       uqc: hsnItem.uqc,
@@ -219,44 +219,18 @@ export function buildGstr1Json(invoices: any[], business: any, period: string) {
     });
   }
 
-  // Format Document details
-  inums.sort();
-  const fromNum = inums.length > 0 ? inums[0] : 'INV-001';
-  const toNum = inums.length > 0 ? inums[inums.length - 1] : `INV-${String(inums.length).padStart(3, '0')}`;
-
-  const docIssueOutput = {
-    doc_det: [
-      {
-        doc_num: 1,
-        doc_typ: 'Invoices for outward supply',
-        docs: [
-          {
-            num: 1,
-            from: fromNum,
-            to: toNum,
-            totnum: inums.length,
-            canc: 0,
-            net_issue: inums.length,
-          },
-        ],
-      },
-    ],
-  };
-
   const grossTurnover = Number((totalTaxable + totalTax).toFixed(2));
 
   return {
     gstin,
     fp,
     gt: grossTurnover,
-    cur_gt: grossTurnover,
     b2b: b2bOutput,
     b2cl: b2clOutput,
     b2cs: b2csOutput,
     hsn: {
       data: hsnOutput,
     },
-    doc_issue: docIssueOutput,
   };
 }
 
@@ -461,7 +435,14 @@ export async function buildGstr1Excel(invoices: any[], business: any, period: st
   }
 
   // Fill Docs rows
-  const docInfo = gstr1Data.doc_issue.doc_det[0].docs[0];
+  const invoiceNumbers = invoices.map((invoice) => invoice.inum).filter(Boolean).sort();
+  const docInfo = {
+    from: invoiceNumbers[0] || '',
+    to: invoiceNumbers[invoiceNumbers.length - 1] || '',
+    totnum: invoiceNumbers.length,
+    canc: 0,
+    net_issue: invoiceNumbers.length,
+  };
   docsSheet.addRow({
     doc_typ: 'Invoices for outward supply',
     from: docInfo.from,

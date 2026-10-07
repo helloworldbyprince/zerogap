@@ -6,7 +6,7 @@ import { CONFIG } from '@/lib/config';
 
 const UploadJsonSchema = z.object({
   bizId: z.string().min(1, 'bizId is required'),
-  period: z.string().min(6, 'period must be at least YYYYMM'),
+  period: z.string().regex(/^\d{4}(0[1-9]|1[0-2])$/, 'period must be YYYYMM'),
   kind: z.enum(['sales', 'purchase', 'gstr2b']),
   files: z
     .array(
@@ -18,7 +18,7 @@ const UploadJsonSchema = z.object({
       })
     )
     .optional(),
-  fileCount: z.number().optional(),
+  fileCount: z.number().int().min(1).max(CONFIG.uploads.maxFiles).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -34,6 +34,18 @@ export async function POST(req: NextRequest) {
       bizId = (formData.get('bizId') as string) || DEMO_BIZ_ID;
       period = (formData.get('period') as string) || DEMO_PERIOD;
       kind = ((formData.get('kind') as string) || 'sales') as any;
+
+      const multipartParsed = z.object({
+        bizId: z.string().min(1),
+        period: z.string().regex(/^\d{4}(0[1-9]|1[0-2])$/),
+        kind: z.enum(['sales', 'purchase', 'gstr2b']),
+      }).safeParse({ bizId, period, kind });
+      if (!multipartParsed.success) {
+        return NextResponse.json(
+          { error: { code: 'VALIDATION_FAILED', message: multipartParsed.error.issues[0]?.message || 'Invalid upload request' } },
+          { status: 400 }
+        );
+      }
 
       const fileEntries = formData.getAll('files');
       for (const entry of fileEntries) {
@@ -89,6 +101,28 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+    }
+
+    if (filesToProcess.length === 0) {
+      return NextResponse.json(
+        { error: { code: 'VALIDATION_FAILED', message: 'At least one file is required.' } },
+        { status: 400 }
+      );
+    }
+
+    const maxBytes = CONFIG.uploads.maxFileMB * 1024 * 1024;
+    const invalidFile = filesToProcess.find((file) => {
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      const allowedForKind = kind === 'gstr2b'
+        ? ['csv', 'xlsx', 'xls'].includes(extension)
+        : CONFIG.uploads.allowedTypes.includes(extension as any);
+      return !allowedForKind || file.size <= 0 || file.size > maxBytes;
+    });
+    if (invalidFile) {
+      return NextResponse.json(
+        { error: { code: 'VALIDATION_FAILED', message: `Unsupported or oversized file: ${invalidFile.name}` } },
+        { status: 400 }
+      );
     }
 
     // Enforce max files check (§10)

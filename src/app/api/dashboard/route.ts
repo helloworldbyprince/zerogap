@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     }
 
     // If still not found, return demo period snapshot for seamless UX
-    if (!periodDoc) {
+    if (!periodDoc && bizId === DEMO_BIZ_ID) {
       periodDoc = memoryStore.periods.get(`${DEMO_BIZ_ID}_${DEMO_PERIOD}`);
     }
 
