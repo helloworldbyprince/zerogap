@@ -6,8 +6,10 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 
 const LOCAL_BUSINESSES_FILE = path.join(process.cwd(), 'tmp', 'zerogap-businesses.json');
+const USE_LOCAL_BUSINESS_STORE = !process.env.K_SERVICE;
 
 async function loadLocalBusinesses() {
+  if (!USE_LOCAL_BUSINESS_STORE) return;
   try {
     const saved = JSON.parse(await readFile(LOCAL_BUSINESSES_FILE, 'utf8'));
     if (Array.isArray(saved)) {
@@ -21,6 +23,7 @@ async function loadLocalBusinesses() {
 }
 
 async function saveLocalBusinesses() {
+  if (!USE_LOCAL_BUSINESS_STORE) return;
   const businesses = Array.from(memoryStore.businesses.values()).filter((business) => business.id !== DEMO_BIZ_ID);
   await mkdir(path.dirname(LOCAL_BUSINESSES_FILE), { recursive: true });
   await writeFile(LOCAL_BUSINESSES_FILE, JSON.stringify(businesses, null, 2), 'utf8');
