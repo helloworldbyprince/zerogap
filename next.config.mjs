@@ -6,6 +6,8 @@ const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep `next build` from replacing assets used by a running local dev server.
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
   output: 'standalone',
   reactStrictMode: true,
   serverExternalPackages: [
