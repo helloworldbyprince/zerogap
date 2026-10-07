@@ -45,13 +45,18 @@ export function Dropzone({
   const [isProcessing, setIsProcessing] = useState(false);
   const [files, setFiles] = useState<FileJobStatus[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const processingRef = useRef(false);
 
-  const waitForJob = async (jobId: string) => {
+  const waitForJob = async (
+    jobId: string,
+    onProgress?: (progress: number, currentFile?: string) => void
+  ) => {
     for (let attempt = 0; attempt < CONFIG.uploads.maxPollAttempts; attempt += 1) {
       const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'Could not read upload progress');
       const job = payload.job;
+      onProgress?.(Number(job?.progress) || 0, job?.currentFile);
       if (job?.status === 'done') return job;
       if (job?.status === 'error') throw new Error(job.error || 'Invoice processing failed');
       await new Promise((resolve) => setTimeout(resolve, CONFIG.uploads.jobPollMs));
@@ -72,19 +77,21 @@ export function Dropzone({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (!isProcessing && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (!isProcessing && e.target.files && e.target.files.length > 0) {
       handleFiles(Array.from(e.target.files));
     }
+    // Allow selecting the same file again after a failed upload.
+    e.target.value = '';
   };
 
   const handleFiles = async (newFiles: File[]) => {
-    if (newFiles.length === 0) return;
+    if (newFiles.length === 0 || processingRef.current) return;
 
     if (newFiles.length > CONFIG.uploads.maxFiles) {
       toast.error(`Maximum ${CONFIG.uploads.maxFiles} files allowed per upload.`);
@@ -100,6 +107,7 @@ export function Dropzone({
       statusText: 'Uploading…',
     }));
 
+    processingRef.current = true;
     setFiles((prev) => [...prev, ...initialStatuses]);
     setIsProcessing(true);
 
@@ -124,56 +132,48 @@ export function Dropzone({
         throw new Error(data.error?.message || 'Upload failed');
       }
 
-      await waitForJob(data.jobId);
-
-      // Simulate step-by-step Document AI progress for UX delight
-      initialStatuses.forEach((fileStatus, idx) => {
-        setTimeout(() => {
-          setFiles((curr) =>
-            curr.map((f) =>
-              f.id === fileStatus.id
-                ? {
-                    ...f,
-                    progress: 55,
-                    status: 'parsing',
-                    statusText: 'Reading… (Document AI asia-south1)',
-                  }
-                : f
-            )
-          );
-        }, 600 * (idx + 1));
-
-        setTimeout(() => {
-          const isWarning = fileStatus.name.toLowerCase().includes('rate') || fileStatus.name.toLowerCase().includes('low');
-          setFiles((curr) =>
-            curr.map((f) =>
-              f.id === fileStatus.id
-                ? {
-                    ...f,
-                    progress: 100,
-                    status: isWarning ? 'warning' : 'done',
-                    statusText: isWarning ? 'Needs review (low confidence)' : 'Done',
-                    confidence: isWarning ? 0.82 : 0.97,
-                  }
-                : f
-            )
-          );
-        }, 1200 * (idx + 1) + 400);
+      const batchIds = new Set(initialStatuses.map((file) => file.id));
+      await waitForJob(data.jobId, (progress) => {
+        setFiles((curr) => curr.map((file) => batchIds.has(file.id)
+          ? {
+              ...file,
+              progress: Math.max(file.progress, Math.min(95, progress)),
+              status: 'parsing',
+              statusText: 'Reading… (Document AI asia-south1)',
+            }
+          : file));
       });
 
-      const totalWait = 1200 * newFiles.length + 800;
-      setTimeout(() => {
-        setIsProcessing(false);
-        toast.success(`Processed ${newFiles.length} bills with Document AI`);
-        onComplete?.();
-      }, totalWait);
+      setFiles((curr) => curr.map((file) => {
+        if (!batchIds.has(file.id)) return file;
+        const isWarning = file.name.toLowerCase().includes('rate') || file.name.toLowerCase().includes('low');
+        return {
+          ...file,
+          progress: 100,
+          status: isWarning ? 'warning' : 'done',
+          statusText: isWarning ? 'Needs review (low confidence)' : 'Done',
+          confidence: isWarning ? 0.82 : 0.97,
+        };
+      }));
+      setIsProcessing(false);
+      processingRef.current = false;
+      toast.success(`Processed ${newFiles.length} bills with Document AI`);
+      onComplete?.();
     } catch (err: any) {
       setIsProcessing(false);
-      toast.error(err.message || 'Upload error');
+      processingRef.current = false;
+      const message = err.message || 'Upload error';
+      const batchIds = new Set(initialStatuses.map((file) => file.id));
+      setFiles((curr) => curr.map((file) => batchIds.has(file.id)
+        ? { ...file, progress: 100, status: 'error', statusText: message }
+        : file));
+      toast.error(message);
     }
   };
 
   const handleSimulateSampleUpload = async () => {
+    if (processingRef.current) return;
+
     const sampleFiles: FileJobStatus[] = [
       {
         id: `sample_001_${Date.now()}`,
@@ -201,6 +201,7 @@ export function Dropzone({
       },
     ];
 
+    processingRef.current = true;
     setFiles((prev) => [...prev, ...sampleFiles]);
     setIsProcessing(true);
 
@@ -224,55 +225,34 @@ export function Dropzone({
         throw new Error('Failed to initiate sample upload');
       }
       const data = await res.json();
-      await waitForJob(data.jobId);
-
-      // Step-by-step progress animation
-      sampleFiles.forEach((sample, idx) => {
-        setTimeout(() => {
-          setFiles((curr) =>
-            curr.map((f) =>
-              f.id === sample.id
-                ? {
-                    ...f,
-                    progress: 60,
-                    status: 'parsing',
-                    statusText: 'Reading… (Document AI asia-south1)',
-                  }
-                : f
-            )
-          );
-        }, 500 * (idx + 1));
-
-        setTimeout(() => {
-          const isWarning = sample.name.includes('rate');
-          setFiles((curr) =>
-            curr.map((f) =>
-              f.id === sample.id
-                ? {
-                    ...f,
-                    progress: 100,
-                    status: isWarning ? 'warning' : 'done',
-                    statusText: isWarning ? 'Needs review (low confidence)' : 'Done',
-                    confidence: isWarning ? 0.81 : 0.98,
-                  }
-                : f
-            )
-          );
-        }, 1100 * (idx + 1));
+      const batchIds = new Set(sampleFiles.map((file) => file.id));
+      await waitForJob(data.jobId, (progress) => {
+        setFiles((curr) => curr.map((file) => batchIds.has(file.id)
+          ? { ...file, progress: Math.max(file.progress, Math.min(95, progress)), status: 'parsing', statusText: 'Reading… (Document AI asia-south1)' }
+          : file));
       });
-
-      setTimeout(() => {
-        setIsProcessing(false);
-        toast.success('Sample bills processed through Document AI!');
-        onComplete?.();
-      }, 3500);
+      setFiles((curr) => curr.map((file) => {
+        if (!batchIds.has(file.id)) return file;
+        const isWarning = file.name.includes('rate');
+        return { ...file, progress: 100, status: isWarning ? 'warning' : 'done', statusText: isWarning ? 'Needs review (low confidence)' : 'Done', confidence: isWarning ? 0.81 : 0.98 };
+      }));
+      setIsProcessing(false);
+      processingRef.current = false;
+      toast.success('Sample bills processed through Document AI!');
+      onComplete?.();
     } catch (err: any) {
       setIsProcessing(false);
-      toast.error(err.message || 'Sample test failed');
+      processingRef.current = false;
+      const message = err.message || 'Sample test failed';
+      const batchIds = new Set(sampleFiles.map((file) => file.id));
+      setFiles((curr) => curr.map((file) => batchIds.has(file.id)
+        ? { ...file, progress: 100, status: 'error', statusText: message }
+        : file));
+      toast.error(message);
     }
   };
 
-  const allCompleted = files.length > 0 && files.every((f) => f.progress === 100);
+  const allCompleted = files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'warning');
 
   return (
     <div className="w-full space-y-6">
@@ -281,9 +261,10 @@ export function Dropzone({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !isProcessing && fileInputRef.current?.click()}
         className={cn(
-          'relative flex flex-col items-center justify-center p-8 sm:p-12 rounded-[16px] border-2 border-dashed transition-all cursor-pointer text-center select-none',
+          'relative flex flex-col items-center justify-center p-8 sm:p-12 rounded-[16px] border-2 border-dashed transition-all text-center select-none',
+          isProcessing ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
           isDragging
             ? 'border-[#F5A524] bg-[#FDF6E4] scale-[1.005]'
             : 'border-[#CBD2DE] bg-white hover:border-[#F5A524] hover:bg-[#FDF6E4]/30 shadow-xs'
@@ -293,6 +274,7 @@ export function Dropzone({
           ref={fileInputRef}
           type="file"
           multiple
+          disabled={isProcessing}
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={handleFileSelect}
           className="hidden"
@@ -403,6 +385,12 @@ export function Dropzone({
                         Done
                       </Badge>
                     )}
+                    {file.status === 'error' && (
+                      <span className="max-w-[260px] truncate text-xs text-[#F31260] flex items-center gap-1.5 font-medium" title={file.statusText}>
+                        <AlertTriangle className="h-3 w-3 shrink-0" />
+                        {file.statusText}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -414,7 +402,8 @@ export function Dropzone({
                     indicatorClassName={cn(
                       file.status === 'warning' && 'bg-[#F5A524]',
                       file.status === 'done' && 'bg-[#17C964]',
-                      file.status === 'parsing' && 'bg-[#F5A524]'
+                      file.status === 'parsing' && 'bg-[#F5A524]',
+                      file.status === 'error' && 'bg-[#F31260]'
                     )}
                   />
                 </div>
