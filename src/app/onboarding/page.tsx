@@ -93,6 +93,7 @@ function OnboardingContent() {
   const handleFinishOnboarding = async (loadDemo: boolean) => {
     if (loadDemo) {
       window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.business, 'biz_sharma_traders_demo');
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.businessGstin, '06ABCDE1234F1Z5');
       window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.period, period);
       toast.success('Seeded demo reconciliation data!');
       router.push('/app');
@@ -113,6 +114,7 @@ function OnboardingContent() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'Could not create business profile');
       window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.business, payload.bizId);
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.businessGstin, gstin);
       window.localStorage.setItem(WORKSPACE_STORAGE_KEYS.period, period);
       toast.success('Business profile created!');
       router.push('/app/sales');

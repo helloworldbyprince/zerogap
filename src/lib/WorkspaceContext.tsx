@@ -13,6 +13,7 @@ export interface WorkspaceBusiness {
 
 const DEMO_BIZ_ID = 'biz_sharma_traders_demo';
 const BUSINESS_KEY = 'zerogap.activeBusinessId';
+const BUSINESS_GSTIN_KEY = 'zerogap.activeBusinessGstin';
 const PERIOD_KEY = 'zerogap.activePeriod';
 
 interface WorkspaceValue {
@@ -35,24 +36,46 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [activePeriod, setPeriodState] = useState<string>(CONFIG.demo.periodCode);
   const [loading, setLoading] = useState(true);
 
-  const refreshBusinesses = async () => {
+  const loadBusinesses = async (): Promise<WorkspaceBusiness[]> => {
     const response = await fetch('/api/businesses', { cache: 'no-store' });
     if (!response.ok) throw new Error('Could not load businesses');
     const payload = await response.json();
-    setBusinesses(payload.businesses || []);
+    const nextBusinesses = payload.businesses || [];
+    setBusinesses(nextBusinesses);
+    return nextBusinesses;
   };
+
+  const refreshBusinesses = async () => { await loadBusinesses(); };
 
   useEffect(() => {
     const storedBusiness = window.localStorage.getItem(BUSINESS_KEY);
+    const storedGstin = window.localStorage.getItem(BUSINESS_GSTIN_KEY);
     const storedPeriod = window.localStorage.getItem(PERIOD_KEY);
-    if (storedBusiness) setBusinessIdState(storedBusiness);
     if (storedPeriod) setPeriodState(storedPeriod);
-    refreshBusinesses().finally(() => setLoading(false));
+    loadBusinesses()
+      .then((available) => {
+        const exact = available.find((business) => business.id === storedBusiness);
+        const sameGstin = storedGstin
+          ? available.find((business) => business.gstin === storedGstin)
+          : null;
+        const replacement = storedBusiness && storedBusiness !== DEMO_BIZ_ID
+          ? [...available].reverse().find((business) => business.id !== DEMO_BIZ_ID)
+          : null;
+        const selected = exact || sameGstin || replacement || available.find((business) => business.id === DEMO_BIZ_ID) || available[0];
+        if (selected) {
+          setBusinessIdState(selected.id);
+          window.localStorage.setItem(BUSINESS_KEY, selected.id);
+          window.localStorage.setItem(BUSINESS_GSTIN_KEY, selected.gstin);
+        }
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const setActiveBusinessId = (id: string) => {
     setBusinessIdState(id);
     window.localStorage.setItem(BUSINESS_KEY, id);
+    const selected = businesses.find((business) => business.id === id);
+    if (selected) window.localStorage.setItem(BUSINESS_GSTIN_KEY, selected.gstin);
   };
 
   const setActivePeriod = (period: string) => {
@@ -81,4 +104,4 @@ export function useWorkspace() {
   return value;
 }
 
-export const WORKSPACE_STORAGE_KEYS = { business: BUSINESS_KEY, period: PERIOD_KEY } as const;
+export const WORKSPACE_STORAGE_KEYS = { business: BUSINESS_KEY, businessGstin: BUSINESS_GSTIN_KEY, period: PERIOD_KEY } as const;

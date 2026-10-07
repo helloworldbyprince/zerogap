@@ -22,6 +22,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const existing = Array.from(memoryStore.businesses.values()).reverse().find(
+      (business) => business.id !== DEMO_BIZ_ID && business.gstin === parsed.data.gstin
+    );
+    if (existing) {
+      return NextResponse.json({ bizId: existing.id, business: existing, existing: true });
+    }
+
     const bizId = `biz_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newBiz = {
       id: bizId,
@@ -43,7 +50,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ bizId }, { status: 201 });
+    return NextResponse.json({ bizId, business: newBiz }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: error.message || 'Something went wrong' } },
@@ -73,7 +80,15 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({ businesses: list });
+    const uniqueBusinesses = Array.from(
+      list.reduce((unique, business) => {
+        const key = business.id === DEMO_BIZ_ID ? business.id : business.gstin || business.id;
+        unique.set(key, business);
+        return unique;
+      }, new Map<string, any>()).values()
+    );
+
+    return NextResponse.json({ businesses: uniqueBusinesses });
   } catch (error: any) {
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: error.message || 'Failed fetching businesses' } },

@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { lang, setLang, t } = useLanguage();
-  const { activeBusiness, activeBusinessId, isDemo } = useWorkspace();
+  const { activeBusiness, activeBusinessId, isDemo, refreshBusinesses } = useWorkspace();
   const isHi = lang === 'hi';
 
   const [bizName, setBizName] = useState<string>('');
@@ -63,6 +63,7 @@ export default function SettingsPage() {
       const response = await fetch('/api/businesses', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bizId: activeBusinessId, name: bizName, gstin, stateCode, turnoverSlab }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'Could not update business');
+      await refreshBusinesses();
       toast.success('Business profile updated successfully!');
     } catch (error: any) { toast.error(error.message || 'Could not update business'); }
   };
@@ -112,7 +113,7 @@ export default function SettingsPage() {
         <p className="text-sm text-[#5F6B7A] mt-0.5">
           {isHi
             ? 'व्यापार की जानकारी, HSN टर्नओवर सीमा, भाषा प्राथमिकता और डेटा रीसेट प्रबंधित करें।'
-            : 'Configure your GSTIN, turnover threshold, statutory HSN digit rules, language preferences, and demo data.'}
+            : `Configure your GSTIN, turnover threshold, statutory HSN digit rules, and language preferences${isDemo ? ', including demo data controls' : ''}.`}
         </p>
       </div>
 
@@ -221,12 +222,12 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2 border-b border-[#E3E7EE] pb-3">
           <Languages className="h-4 w-4 text-[#17C964]" />
           <h2 className="text-sm font-semibold text-[#111418]">
-            {isHi ? 'प्राथमिकताएं और डेमो डेटा' : 'Preferences & Demo Data'}
+            {isHi ? (isDemo ? 'प्राथमिकताएं और डेमो डेटा' : 'प्राथमिकताएं') : (isDemo ? 'Preferences & Demo Data' : 'Preferences')}
           </h2>
         </div>
 
         <div className="space-y-4 text-xs">
-          {isDemo && <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
+          <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
             <div>
               <span className="font-semibold text-[#111418] block">
                 {isHi ? 'डिफ़ॉल्ट भाषा (Language)' : 'Default Interface Language'}
@@ -261,9 +262,9 @@ export default function SettingsPage() {
                 हिन्दी (Hindi)
               </Button>
             </div>
-          </div>}
+          </div>
 
-          <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
+          {isDemo && <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE]">
             <div>
               <span className="font-semibold text-[#111418] block">
                 {isHi ? 'डेमो डेटा रीसेट — 1 क्लिक' : 'Load Demo Data — 1 Click'}
@@ -281,7 +282,7 @@ export default function SettingsPage() {
               <RotateCcw className="h-3.5 w-3.5 text-[#17C964]" />
               {isHi ? 'डेमो डेटा रीसेट' : 'Reload demo data'}
             </Button>
-          </div>
+          </div>}
         </div>
       </Card>
 
@@ -336,7 +337,7 @@ export default function SettingsPage() {
             </div>
 
             <p className="text-xs text-[#5F6B7A] leading-relaxed">
-              Changing turnover slab to <strong className="text-[#111418]">&gt; ₹5 Crore</strong> will re-run validation and enforce strict <strong className="text-[#111418]">6-digit HSN codes</strong> across all active sales invoices. Any 4-digit codes will be flagged for review.
+              Changing turnover slab to <strong className="text-[#111418]">{pendingSlab === 'OVER_5CR' ? '> ₹5 Crore' : '≤ ₹5 Crore'}</strong> will re-run validation and enforce <strong className="text-[#111418]">{pendingSlab === 'OVER_5CR' ? '6-digit' : '4-digit'} HSN codes</strong> across active sales invoices.
             </p>
 
             <div className="pt-2 flex justify-end gap-2">
