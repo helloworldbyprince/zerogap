@@ -34,7 +34,7 @@ function AppShellInner({ children }: AppShellProps) {
   const { lang, toggleLang, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { businesses, activeBusiness, activeBusinessId, activePeriod, setActiveBusinessId, setActivePeriod } = useWorkspace();
+  const { businesses, activeBusiness, activeBusinessId, activePeriod, loading: workspaceLoading, setActiveBusinessId, setActivePeriod } = useWorkspace();
   const [businessMenuOpen, setBusinessMenuOpen] = useState(false);
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
   const periodOptions = [
@@ -97,6 +97,15 @@ function AppShellInner({ children }: AppShellProps) {
   ];
 
   const [isSigningIn, setIsSigningIn] = useState(false);
+
+  if (workspaceLoading) {
+    return (
+      <div className="min-h-screen bg-[#F6F7F9] p-6 animate-pulse">
+        <div className="h-12 rounded-[12px] border border-[#E3E7EE] bg-white" />
+        <div className="mx-auto mt-8 h-64 max-w-[1200px] rounded-[16px] border border-[#E3E7EE] bg-white" />
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);

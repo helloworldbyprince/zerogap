@@ -39,23 +39,27 @@ export default function SalesPage() {
     { id: 'gstr1', label: '3. GSTR-1', sublabel: 'Portal-ready files' },
   ];
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/invoices?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&kind=sales`);
+      const res = await fetch(`/api/invoices?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&kind=sales`, { signal, cache: 'no-store' });
       const data = await res.json();
-      if (data.invoices) {
+      if (!signal?.aborted && data.invoices) {
         setInvoices(data.invoices);
       }
     } catch (e) {
-      console.error(e);
+      if (!signal?.aborted) console.error(e);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchInvoices();
+    const controller = new AbortController();
+    setInvoices([]);
+    setAcknowledgedGate(false);
+    fetchInvoices(controller.signal);
+    return () => controller.abort();
   }, [activeBusinessId, activePeriod]);
 
   const redRows = invoices.filter((i) => i.status === 'red');

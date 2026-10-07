@@ -132,24 +132,30 @@ export function InvoiceReviewTable({
     rt: 18,
   });
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/invoices?bizId=${bizId}&period=${period}&kind=sales`);
+      const res = await fetch(`/api/invoices?bizId=${encodeURIComponent(bizId)}&period=${encodeURIComponent(period)}&kind=sales`, { signal, cache: 'no-store' });
       const data = await res.json();
-      if (data.invoices) {
+      if (!signal?.aborted && data.invoices) {
         setInvoices(data.invoices);
         setSummary(data.summary);
       }
     } catch (e: any) {
-      toast.error('Failed to load invoice list');
+      if (!signal?.aborted) toast.error('Failed to load invoice list');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchInvoices();
+    const controller = new AbortController();
+    setInvoices([]);
+    setSummary(null);
+    setSelectedInvoice(null);
+    setDrawerOpen(false);
+    fetchInvoices(controller.signal);
+    return () => controller.abort();
   }, [bizId, period]);
 
   const handleRowClick = (inv: InvoiceRecord) => {
@@ -299,7 +305,7 @@ export function InvoiceReviewTable({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={fetchInvoices}
+              onClick={() => fetchInvoices()}
               className="h-8 px-2 text-[#5F6B7A] hover:text-[#111418]"
               title="Refresh table"
             >
