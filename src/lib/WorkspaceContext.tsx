@@ -83,17 +83,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(PERIOD_KEY, period);
   };
 
-  const value = useMemo<WorkspaceValue>(() => ({
-    businesses,
-    activeBusiness: businesses.find((business) => business.id === activeBusinessId) || null,
-    activeBusinessId,
-    activePeriod,
-    isDemo: activeBusinessId === DEMO_BIZ_ID,
-    loading,
-    setActiveBusinessId,
-    setActivePeriod,
-    refreshBusinesses,
-  }), [businesses, activeBusinessId, activePeriod, loading]);
+  const value = useMemo<WorkspaceValue>(() => {
+    const activeBusiness = businesses.find((business) => business.id === activeBusinessId) || null;
+    return {
+      businesses,
+      activeBusiness,
+      activeBusinessId,
+      activePeriod,
+      isDemo: activeBusiness?.id === DEMO_BIZ_ID,
+      loading,
+      setActiveBusinessId,
+      setActivePeriod,
+      refreshBusinesses,
+    };
+  }, [businesses, activeBusinessId, activePeriod, loading]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
