@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CONFIG } from '@/lib/config';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useWorkspace } from '@/lib/WorkspaceContext';
 import {
   UploadCloud,
   FileSpreadsheet,
@@ -147,9 +148,12 @@ const INITIAL_DEMO_ITEMS: MismatchCardData[] = [
 
 export default function PurchasesPage() {
   const { lang } = useLanguage();
+  const { activeBusinessId, activePeriod, isDemo } = useWorkspace();
+  const gstr2bInputRef = useRef<HTMLInputElement>(null);
   const [purchaseFilesCount, setPurchaseFilesCount] = useState<number>(44);
   const [gstr2bFileName, setGstr2bFileName] = useState<string>('GSTR-2B_September_2026.xlsx');
   const [gstr2bRecordsCount, setGstr2bRecordsCount] = useState<number>(42);
+  const [isUploading2b, setIsUploading2b] = useState(false);
   const [isMatching, setIsMatching] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [whyRiskModalOpen, setWhyRiskModalOpen] = useState<boolean>(false);
@@ -185,19 +189,67 @@ export default function PurchasesPage() {
   useEffect(() => {
     async function loadReco() {
       try {
-        const res = await fetch(`/api/reconcile?bizId=biz_sharma_traders_demo&period=${CONFIG.demo.periodCode}`);
+        const res = await fetch(`/api/reconcile?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          if (data && data.items && data.items.length > 0) {
-            setResults(data);
-          }
+          setResults({
+            ...data,
+            items: isDemo && (!data.items || data.items.length === 0) ? INITIAL_DEMO_ITEMS : (data.items || []),
+          });
         }
       } catch (e) {
         console.warn('Failed loading reconciliation results from API, using seeded defaults:', e);
       }
     }
     loadReco();
-  }, []);
+  }, [activeBusinessId, activePeriod, isDemo]);
+
+  useEffect(() => {
+    setPurchaseFilesCount(isDemo ? 44 : 0);
+    setGstr2bFileName(isDemo ? 'GSTR-2B_September_2026.xlsx' : '');
+    setGstr2bRecordsCount(isDemo ? 42 : 0);
+  }, [isDemo, activeBusinessId, activePeriod]);
+
+  const handleGstr2bUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || isDemo || isUploading2b) return;
+
+    setIsUploading2b(true);
+    try {
+      const formData = new FormData();
+      formData.append('bizId', activeBusinessId);
+      formData.append('period', activePeriod);
+      formData.append('kind', 'gstr2b');
+      formData.append('files', file);
+
+      const response = await fetch('/api/uploads', { method: 'POST', body: formData });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || 'Could not upload GSTR-2B file');
+
+      let completedJob: any = null;
+      for (let attempt = 0; attempt < CONFIG.uploads.maxPollAttempts; attempt += 1) {
+        const jobResponse = await fetch(`/api/jobs/${encodeURIComponent(payload.jobId)}`, { cache: 'no-store' });
+        const jobPayload = await jobResponse.json();
+        if (!jobResponse.ok) throw new Error(jobPayload.error?.message || 'Could not read upload progress');
+        if (jobPayload.job?.status === 'error') throw new Error(jobPayload.job.error || 'Could not parse GSTR-2B file');
+        if (jobPayload.job?.status === 'done') {
+          completedJob = jobPayload.job;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, CONFIG.uploads.jobPollMs));
+      }
+      if (!completedJob) throw new Error('GSTR-2B processing timed out. Please try again.');
+
+      setGstr2bFileName(file.name);
+      setGstr2bRecordsCount(completedJob.processedCount || 0);
+      toast.success(`${completedJob.processedCount || 0} GSTR-2B records imported`);
+    } catch (error: any) {
+      toast.error(error.message || 'Could not upload GSTR-2B file');
+    } finally {
+      setIsUploading2b(false);
+    }
+  };
 
   // Run match handler
   const handleRunMatch = async () => {
@@ -209,8 +261,8 @@ export default function PurchasesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bizId: CONFIG.demo.businessName,
-          period: CONFIG.demo.periodCode,
+          bizId: activeBusinessId,
+          period: activePeriod,
         }),
       });
 
@@ -218,8 +270,8 @@ export default function PurchasesPage() {
         const data = await res.json();
         setTimeout(() => {
           setIsMatching(false);
-          setResults(data);
-          toast.success('Matching complete! Match Score: 94% (41 matched, 4 mismatches, 3 unfiled by supplier)');
+          setResults({ ...data.result, items: data.result?.items || [] });
+          toast.success(`Matching complete! Match score: ${data.matchScore}%`);
         }, 1200);
       } else {
         throw new Error('Reconciliation API error');
@@ -440,7 +492,7 @@ export default function PurchasesPage() {
                     <Badge variant="emerald" className="text-[10px] px-2 py-0">Active</Badge>
                   </h3>
                   <p className="text-xs text-[#5F6B7A]">
-                    Drop portal Excel (.xlsx) or CSV downloaded from GSTN
+                    {isDemo ? 'Demo snapshot of a GSTN-downloaded file' : 'Upload Excel (.xlsx) or CSV downloaded manually from GSTN'}
                   </p>
                 </div>
               </div>
@@ -448,30 +500,34 @@ export default function PurchasesPage() {
 
             <div className="p-3.5 rounded-xl border border-dashed border-[#CBD2DE] bg-[#F6F7F9] text-center my-2">
               <p className="text-xs font-medium text-[#111418] truncate flex items-center justify-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-[#0F8C43] stroke-[3]" />
-                {gstr2bFileName}
+                {gstr2bFileName ? <Check className="h-3.5 w-3.5 text-[#0F8C43] stroke-[3]" /> : <UploadCloud className="h-3.5 w-3.5 text-[#5F6B7A]" />}
+                {gstr2bFileName || 'No GSTR-2B file uploaded'}
               </p>
               <p className="text-[11px] text-[#5F6B7A] mt-0.5">
-                {gstr2bRecordsCount} inward supplier records parsed & indexed
+                {gstr2bFileName ? `${gstr2bRecordsCount} inward supplier records parsed & indexed` : 'Download GSTR-2B from GSTN, then upload it here'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <span className="text-[11px] text-[#5F6B7A]">Generated on 14th Sep</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setGstr2bFileName('GSTR-2B_September_2026.xlsx');
-                setGstr2bRecordsCount(42);
-                toast.success('Official GSTR-2B Excel loaded');
-              }}
-              className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
-            >
-              <RotateCcw className="h-3 w-3 mr-1" />
-              Reload Portal 2B
-            </Button>
+            <span className="text-[11px] text-[#5F6B7A]">{isDemo ? 'Synthetic demo data · no GSTN connection' : 'Manual import · no direct GSTN connection'}</span>
+            {isDemo ? (
+              <Badge variant="neutral" className="text-[10px]">Demo snapshot</Badge>
+            ) : (
+              <>
+                <input ref={gstr2bInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleGstr2bUpload} className="hidden" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isUploading2b}
+                  onClick={() => gstr2bInputRef.current?.click()}
+                  className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
+                >
+                  <UploadCloud className="h-3 w-3 mr-1" />
+                  {isUploading2b ? 'Importing…' : gstr2bFileName ? 'Replace GSTR-2B file' : 'Upload GSTR-2B file'}
+                </Button>
+              </>
+            )}
           </div>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/layout/Logo';
@@ -37,6 +37,8 @@ function AppShellInner({ children }: AppShellProps) {
   const { businesses, activeBusiness, activeBusinessId, activePeriod, loading: workspaceLoading, setActiveBusinessId, setActivePeriod } = useWorkspace();
   const [businessMenuOpen, setBusinessMenuOpen] = useState(false);
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
+  const businessMenuRef = useRef<HTMLDivElement>(null);
+  const periodMenuRef = useRef<HTMLDivElement>(null);
   const periodOptions = [
     { value: '202609', label: 'September 2026' },
     { value: '202608', label: 'August 2026' },
@@ -50,6 +52,31 @@ function AppShellInner({ children }: AppShellProps) {
     });
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const closeMenus = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!businessMenuRef.current?.contains(target)) setBusinessMenuOpen(false);
+      if (!periodMenuRef.current?.contains(target)) setPeriodMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setBusinessMenuOpen(false);
+        setPeriodMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', closeMenus);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeMenus);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    setBusinessMenuOpen(false);
+    setPeriodMenuOpen(false);
+  }, [pathname]);
 
   const navItems = [
     {
@@ -207,7 +234,7 @@ function AppShellInner({ children }: AppShellProps) {
             </button>
 
             {/* Business Switcher Dropdown */}
-            <div className="relative">
+            <div ref={businessMenuRef} className="relative">
               <button
                 type="button"
                 onClick={() => { setBusinessMenuOpen((open) => !open); setPeriodMenuOpen(false); }}
@@ -232,7 +259,7 @@ function AppShellInner({ children }: AppShellProps) {
             </div>
 
             {/* Period Picker Dropdown */}
-            <div className="relative hidden sm:block">
+            <div ref={periodMenuRef} className="relative hidden sm:block">
               <button
                 type="button"
                 onClick={() => { setPeriodMenuOpen((open) => !open); setBusinessMenuOpen(false); }}

@@ -42,18 +42,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Fallback: if still null and it's demo, generate demo snapshot
+    // Demo workspaces get the showcase snapshot; real workspaces start empty.
     if (!result) {
       result = {
         bizId,
         period,
-        matchScore: CONFIG.demo.matchScore,
-        matchedCount: CONFIG.demo.matchedCount,
-        totalBillsCount: CONFIG.demo.totalBillsCount,
-        moneyAtRisk: CONFIG.demo.moneyAtRisk,
-        missingIn2BCount: CONFIG.demo.missingIn2BCount,
-        missingInBooksCount: CONFIG.demo.missingInBooksCount,
-        mismatchesCount: CONFIG.demo.mismatchesCount,
+        matchScore: bizId === DEMO_BIZ_ID ? CONFIG.demo.matchScore : 0,
+        matchedCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.matchedCount : 0,
+        totalBillsCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.totalBillsCount : 0,
+        moneyAtRisk: bizId === DEMO_BIZ_ID ? CONFIG.demo.moneyAtRisk : 0,
+        missingIn2BCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.missingIn2BCount : 0,
+        missingInBooksCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.missingInBooksCount : 0,
+        mismatchesCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.mismatchesCount : 0,
         items: [],
         reconciledAt: new Date().toISOString(),
       };
