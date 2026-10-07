@@ -103,7 +103,10 @@ function OnboardingContent() {
     try {
       const response = await fetch('/api/businesses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await auth.currentUser?.getIdToken()}`,
+        },
         body: JSON.stringify({
           name: businessName,
           gstin,

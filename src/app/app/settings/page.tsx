@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { auth } from '@/lib/firebase';
 
 export default function SettingsPage() {
   const { lang, setLang, t } = useLanguage();
@@ -60,7 +61,7 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     try {
-      const response = await fetch('/api/businesses', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bizId: activeBusinessId, name: bizName, gstin, stateCode, turnoverSlab }) });
+      const response = await fetch('/api/businesses', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await auth.currentUser?.getIdToken()}` }, body: JSON.stringify({ bizId: activeBusinessId, name: bizName, gstin, stateCode, turnoverSlab }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'Could not update business');
       await refreshBusinesses();
@@ -88,7 +89,7 @@ export default function SettingsPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/businesses?bizId=${encodeURIComponent(activeBusinessId)}`, { method: 'DELETE' });
+      const response = await fetch(`/api/businesses?bizId=${encodeURIComponent(activeBusinessId)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${await auth.currentUser?.getIdToken()}` } });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'Could not delete data');
       setShowDeleteModal(false); setDeleteConfirmText(''); toast.success('All transactional data for this business cleared.');

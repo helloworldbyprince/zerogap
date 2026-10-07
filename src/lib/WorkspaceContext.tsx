@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { CONFIG } from './config';
+import { auth, onAuthStateChanged } from './firebase';
 
 export interface WorkspaceBusiness {
   id: string;
@@ -37,7 +38,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadBusinesses = async (): Promise<WorkspaceBusiness[]> => {
-    const response = await fetch('/api/businesses', { cache: 'no-store' });
+    const token = await auth.currentUser?.getIdToken();
+    const response = await fetch('/api/businesses', {
+      cache: 'no-store',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     if (!response.ok) throw new Error('Could not load businesses');
     const payload = await response.json();
     const nextBusinesses = payload.businesses || [];
@@ -52,7 +57,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const storedGstin = window.localStorage.getItem(BUSINESS_GSTIN_KEY);
     const storedPeriod = window.localStorage.getItem(PERIOD_KEY);
     if (storedPeriod) setPeriodState(storedPeriod);
-    loadBusinesses()
+    const unsubscribe = onAuthStateChanged(auth, () => loadBusinesses()
       .then((available) => {
         const exact = available.find((business) => business.id === storedBusiness);
         const sameGstin = storedGstin
@@ -68,7 +73,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           window.localStorage.setItem(BUSINESS_GSTIN_KEY, selected.gstin);
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => setLoading(false)));
+    return unsubscribe;
   }, []);
 
   const setActiveBusinessId = (id: string) => {

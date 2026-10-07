@@ -1,5 +1,7 @@
 import { getApps, getApp, initializeApp, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
+import type { NextRequest } from 'next/server';
 import { CONFIG } from '@/lib/config';
 import fs from 'fs';
 import path from 'path';
@@ -18,14 +20,6 @@ function initAdmin(): App | null {
 
   const projectId = process.env.GCP_PROJECT_ID || 'zerogap-509816';
   const serviceAccountPath = path.resolve(process.cwd(), 'service-account.json');
-  const hasRuntimeCredentials = Boolean(
-    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-    process.env.K_SERVICE ||
-    process.env.FIRESTORE_EMULATOR_HOST ||
-    fs.existsSync(serviceAccountPath)
-  );
-  if (!hasRuntimeCredentials) return null;
-
   if (fs.existsSync(serviceAccountPath)) {
     try {
       const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
@@ -1010,6 +1004,18 @@ export function getFirestoreDb(): Firestore | null {
     if (!adminApp) return null;
     return getFirestore(adminApp);
   } catch (e) {
+    return null;
+  }
+}
+
+export async function getAuthenticatedUid(req: NextRequest): Promise<string | null> {
+  if (!adminApp) return null;
+  const authorization = req.headers.get('authorization');
+  if (!authorization?.startsWith('Bearer ')) return null;
+  try {
+    const decoded = await getAuth(adminApp).verifyIdToken(authorization.slice(7));
+    return decoded.uid;
+  } catch {
     return null;
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CONFIG } from '@/lib/config';
-import { memoryStore, getFirestoreDb, DEMO_BIZ_ID } from '@/lib/firebase-admin';
+import { memoryStore, getFirestoreDb, getAuthenticatedUid, DEMO_BIZ_ID } from '@/lib/firebase-admin';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 
@@ -35,6 +35,8 @@ const BusinessSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const ownerUid = await getAuthenticatedUid(req);
+    if (!ownerUid) return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Sign in is required.' } }, { status: 401 });
     await loadLocalBusinesses();
     const body = await req.json();
     const parsed = BusinessSchema.safeParse(body);
@@ -47,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     const existing = Array.from(memoryStore.businesses.values()).reverse().find(
-      (business) => business.id !== DEMO_BIZ_ID && business.gstin === parsed.data.gstin
+      (business) => business.id !== DEMO_BIZ_ID && business.ownerUid === ownerUid && business.gstin === parsed.data.gstin
     );
     if (existing) {
       return NextResponse.json({ bizId: existing.id, business: existing, existing: true });
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
     const newBiz = {
       id: bizId,
       ...parsed.data,
-      ownerUid: 'user_active',
+      ownerUid,
       createdAt: new Date().toISOString(),
     };
 
@@ -84,15 +86,25 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const ownerUid = await getAuthenticatedUid(req);
     await loadLocalBusinesses();
-    const list: any[] = [];
+    const list: any[] = [memoryStore.businesses.get(DEMO_BIZ_ID)].filter(Boolean);
     const db = getFirestoreDb();
 
-    if (db) {
+    if (db && ownerUid) {
       try {
-        const snap = await db.collection('businesses').get();
+        // Migrate legacy localhost profiles created before UID ownership existed.
+        for (const [id, business] of memoryStore.businesses.entries()) {
+          if (id !== DEMO_BIZ_ID && business.ownerUid === 'user_active') {
+            const migrated = { ...business, ownerUid, updatedAt: new Date().toISOString() };
+            memoryStore.businesses.set(id, migrated);
+            await db.collection('businesses').doc(id).set(migrated, { merge: true });
+          }
+        }
+        await saveLocalBusinesses();
+        const snap = await db.collection('businesses').where('ownerUid', '==', ownerUid).get();
         snap.forEach((doc: any) => list.push({ id: doc.id, ...doc.data() }));
       } catch (e) {
         console.warn('Firestore read error, falling back to memory store:', e);
@@ -101,7 +113,7 @@ export async function GET() {
 
     // Merge memory store
     memoryStore.businesses.forEach((biz) => {
-      if (!list.some((b) => b.id === biz.id)) {
+      if ((biz.id === DEMO_BIZ_ID || (ownerUid && biz.ownerUid === ownerUid)) && !list.some((b) => b.id === biz.id)) {
         list.push(biz);
       }
     });
@@ -125,6 +137,8 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    const ownerUid = await getAuthenticatedUid(req);
+    if (!ownerUid) return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Sign in is required.' } }, { status: 401 });
     await loadLocalBusinesses();
     const body = await req.json();
     const bizId = z.string().min(1).parse(body.bizId);
@@ -133,6 +147,7 @@ export async function PATCH(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: parsed.error.issues[0]?.message || 'Validation failed' } }, { status: 400 });
     const existing = memoryStore.businesses.get(bizId);
     if (!existing) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Business not found.' } }, { status: 404 });
+    if (existing.ownerUid !== ownerUid) return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'This business belongs to another account.' } }, { status: 403 });
     const updated = { ...existing, ...parsed.data, updatedAt: new Date().toISOString() };
     memoryStore.businesses.set(bizId, updated);
     await saveLocalBusinesses();
@@ -146,9 +161,13 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const ownerUid = await getAuthenticatedUid(req);
+    if (!ownerUid) return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Sign in is required.' } }, { status: 401 });
     const bizId = new URL(req.url).searchParams.get('bizId');
     if (!bizId) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: 'bizId is required.' } }, { status: 400 });
     if (bizId === DEMO_BIZ_ID) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: 'Demo business data cannot be deleted.' } }, { status: 400 });
+    const business = memoryStore.businesses.get(bizId);
+    if (business && business.ownerUid !== ownerUid) return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'This business belongs to another account.' } }, { status: 403 });
     for (const store of [memoryStore.periods, memoryStore.jobs, memoryStore.invoices, memoryStore.purchases, memoryStore.gstr2b, memoryStore.reco]) {
       for (const [key, value] of store.entries()) if (value?.bizId === bizId) store.delete(key);
     }
