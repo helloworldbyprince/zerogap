@@ -157,23 +157,36 @@ export default function TrianglePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customPrompt: prompt,
-          lang,
+          context: {
+            type: 'triangle_gap',
+            gap: type === 'sales'
+              ? Math.abs(gstr1Liability - gstr3bTaxPaid)
+              : Math.abs(gstr3bItcClaimed - gstr2bCredit),
+            amountAtRisk: type === 'sales'
+              ? Math.abs(gstr1Liability - gstr3bTaxPaid)
+              : Math.abs(gstr3bItcClaimed - gstr2bCredit),
+            lang,
+            ruleNotice: type === 'sales' ? 'Rule 88C' : 'Rule 88D / DRC-01C',
+            details: prompt,
+          },
         }),
       });
 
-      if (!res.ok) throw new Error('Explain service error');
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error?.message || 'Explain service error');
+      }
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       if (!reader) return;
 
+      let buffer = '';
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = done ? '' : lines.pop() || '';
         for (const line of lines) {
           const trimmed = line.trim();
           if (trimmed.startsWith('data: ')) {
@@ -188,9 +201,14 @@ export default function TrianglePage() {
                   setCreditAiText((prev) => prev + parsed.text);
                 }
               }
-            } catch (e) {}
+              if (parsed.error) throw new Error(parsed.error);
+            } catch (error) {
+              if (error instanceof SyntaxError) continue;
+              throw error;
+            }
           }
         }
+        if (done) break;
       }
     } catch (e: any) {
       toast.error('AI explanation failed');

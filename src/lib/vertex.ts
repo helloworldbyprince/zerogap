@@ -126,6 +126,7 @@ function getFallbackExplanation(ctx: ExplainContext, isHindi: boolean): string {
       return `You paid GST on invoice ${ctx.invoiceNumber || ''} to ${ctx.supplierName || 'the supplier'}, but they haven't uploaded it to the GST portal yet. Under Section 16(2)(aa), this ${amtStr} tax credit is blocked until they file. Contact ${ctx.supplierName || 'them'} immediately and ask them to include this bill in their next GSTR-1 return.`;
 
     case 'VALUE_MISMATCH':
+    case 'RATE_MISMATCH':
       if (isHindi) {
         return `आपके खातों और सप्लायर द्वारा पोर्टल पर दर्ज टैक्स में ${amtStr} का अंतर है। पोर्टल केवल उस क्रेडिट की अनुमति देता है जो सप्लायर ने अपलोड किया है। अधिक क्लेम करने पर Rule 88D नोटिस आ सकता है। अपने मूल बिल की जांच करें और जरूरत पड़ने पर सप्लायर से संशोधन (B2BA) करने का अनुरोध करें।`;
       }

@@ -261,14 +261,23 @@ export default function PurchasesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mismatchIds: [item.id],
-          items: [item],
-          lang,
+          context: {
+            type: 'mismatch_card',
+            cause: item.cause,
+            supplierName: item.supplierName,
+            invoiceNumber: item.inum,
+            amountAtRisk: item.amountAtRisk,
+            booksTax: item.booksTax,
+            gstr2bTax: item.gstr2bTax,
+            lang,
+            details: item.whatHappened,
+          },
         }),
       });
 
       if (!res.ok) {
-        throw new Error('Explain service unavailable');
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error?.message || 'Explain service unavailable');
       }
 
       const reader = res.body?.getReader();
@@ -276,12 +285,12 @@ export default function PurchasesPage() {
 
       if (!reader) return;
 
+      let buffer = '';
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = done ? '' : lines.pop() || '';
 
         for (const line of lines) {
           const trimmed = line.trim();
@@ -296,9 +305,14 @@ export default function PurchasesPage() {
                   [item.id]: (prev[item.id] || '') + parsed.text,
                 }));
               }
-            } catch (e) {}
+              if (parsed.error) throw new Error(parsed.error);
+            } catch (error) {
+              if (error instanceof SyntaxError) continue;
+              throw error;
+            }
           }
         }
+        if (done) break;
       }
     } catch (err: any) {
       toast.error('AI streaming error: ' + (err.message || 'Unknown'));
