@@ -27,6 +27,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Info,
+  UploadCloud,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -246,7 +247,7 @@ export function InvoiceReviewTable({
   });
 
   const redInvoicesCount = invoices.filter((inv) => inv.status === 'red').length;
-  const canProceed = redInvoicesCount === 0 || acknowledgedRedRows;
+  const canProceed = invoices.length > 0 && (redInvoicesCount === 0 || acknowledgedRedRows);
 
   return (
     <TooltipProvider>
@@ -296,6 +297,7 @@ export function InvoiceReviewTable({
               variant="outline"
               size="sm"
               onClick={handleConfirmAllGreen}
+              disabled={invoices.length === 0}
               className="text-xs h-8 border-[#17C964]/40 text-[#0F8C43] hover:bg-[#17C964]/10 shrink-0 font-medium"
             >
               <Check className="h-3.5 w-3.5 mr-1.5" />
@@ -621,10 +623,15 @@ export function InvoiceReviewTable({
                   <span className="text-[11px]">I have checked</span>
                 </label>
               </div>
-            ) : (
+            ) : invoices.length > 0 ? (
               <div className="flex items-center gap-2 text-xs text-[#0F8C43] font-medium">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#17C964]" />
                 <span>All {invoices.length} invoices verified. Ready to compile GSTR-1.</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-[#5F6B7A] font-medium">
+                <UploadCloud className="h-4 w-4 shrink-0" />
+                <span>Upload at least one invoice before preparing GSTR-1.</span>
               </div>
             )}
           </div>

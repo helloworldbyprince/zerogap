@@ -27,7 +27,7 @@ import { useWorkspace } from '@/lib/WorkspaceContext';
 
 export default function SalesPage() {
   const { activeBusiness, activeBusinessId, activePeriod, isDemo } = useWorkspace();
-  const [currentStep, setCurrentStep] = useState<number>(1); // Default to Step B (Review) for instant evaluation
+  const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedTab, setSelectedTab] = useState<'b2b' | 'b2cl' | 'b2cs' | 'hsn' | 'docs'>('b2b');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,8 +47,10 @@ export default function SalesPage() {
       if (!signal?.aborted && data.invoices) {
         setInvoices(data.invoices);
       }
+      return data.invoices || [];
     } catch (e) {
       if (!signal?.aborted) console.error(e);
+      return [];
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
@@ -58,9 +60,15 @@ export default function SalesPage() {
     const controller = new AbortController();
     setInvoices([]);
     setAcknowledgedGate(false);
-    fetchInvoices(controller.signal);
+    // Demo opens on its populated review showcase. A real business starts at
+    // upload unless this period already contains invoices to review.
+    setCurrentStep(isDemo ? 1 : 0);
+    fetchInvoices(controller.signal).then((loadedInvoices) => {
+      if (controller.signal.aborted) return;
+      if (!isDemo && loadedInvoices.length > 0) setCurrentStep(1);
+    });
     return () => controller.abort();
-  }, [activeBusinessId, activePeriod]);
+  }, [activeBusinessId, activePeriod, isDemo]);
 
   useEffect(() => {
     // Demo records are a read-only showcase; uploads belong to real workspaces.
