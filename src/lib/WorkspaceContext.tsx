@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { CONFIG } from './config';
-import { auth, onAuthStateChanged } from './firebase';
+import { auth, onAuthStateChanged, type User } from './firebase';
 
 export interface WorkspaceBusiness {
   id: string;
@@ -37,8 +37,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [activePeriod, setPeriodState] = useState<string>(CONFIG.demo.periodCode);
   const [loading, setLoading] = useState(true);
 
-  const loadBusinesses = async (): Promise<WorkspaceBusiness[]> => {
-    const token = await auth.currentUser?.getIdToken();
+  const loadBusinesses = async (authenticatedUser: User | null = auth.currentUser): Promise<WorkspaceBusiness[]> => {
+    const token = await authenticatedUser?.getIdToken();
     const response = await fetch('/api/businesses', {
       cache: 'no-store',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -57,7 +57,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const storedGstin = window.localStorage.getItem(BUSINESS_GSTIN_KEY);
     const storedPeriod = window.localStorage.getItem(PERIOD_KEY);
     if (storedPeriod) setPeriodState(storedPeriod);
-    const unsubscribe = onAuthStateChanged(auth, () => loadBusinesses()
+    const unsubscribe = onAuthStateChanged(auth, (authenticatedUser) => loadBusinesses(authenticatedUser)
       .then((available) => {
         const exact = available.find((business) => business.id === storedBusiness);
         const sameGstin = storedGstin
