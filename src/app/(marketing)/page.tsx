@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DashboardMockCard } from '@/components/cards/DashboardMockCard';
 import { LandingFaq } from '@/components/layout/LandingFaq';
+import { LandingAuthActions } from '@/components/layout/LandingAuthActions';
 import { CONFIG } from '@/lib/config';
 import { COPY } from '@/lib/copy';
 import {
@@ -67,14 +68,7 @@ export default function LandingPage() {
           </nav>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-3">
-            <Button asChild variant="primary" size="default">
-              <Link href="/onboarding?demo=1">
-                {t.primaryCta}
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
-            </Button>
-          </div>
+          <LandingAuthActions demoLabel={t.primaryCta} />
         </div>
       </header>
 
