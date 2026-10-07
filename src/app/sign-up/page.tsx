@@ -3,34 +3,34 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Loader2, LogIn } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, UserPlus } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
 import { auth, onAuthStateChanged, signInWithGoogle } from '@/lib/firebase';
 
-export default function SignInPage() {
+export default function SignUpPage() {
   const router = useRouter();
   const [checkingSession, setCheckingSession] = useState(true);
-  const [signingIn, setSigningIn] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => onAuthStateChanged(auth, (user) => {
     setCheckingSession(false);
-    if (user) router.replace('/app');
+    if (user) router.replace('/onboarding');
   }), [router]);
 
-  const handleGoogleSignIn = async () => {
-    if (signingIn) return;
-    setSigningIn(true);
+  const handleGoogleSignUp = async () => {
+    if (creatingAccount) return;
+    setCreatingAccount(true);
     setError('');
 
     const result = await signInWithGoogle();
     if (result.user) {
-      router.replace('/app');
+      router.replace('/onboarding');
       return;
     }
 
-    setSigningIn(false);
+    setCreatingAccount(false);
     if (result.error && !result.error.includes('popup-closed-by-user')) {
       setError(result.error);
     }
@@ -50,11 +50,11 @@ export default function SignInPage() {
         <section className="rounded-[16px] border border-[#E3E7EE] bg-white p-8 shadow-xs">
           <div className="mb-7">
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-[12px] bg-[#FDF6E4] text-[#9E6400]">
-              <LogIn className="h-5 w-5" />
+              <UserPlus className="h-5 w-5" />
             </div>
-            <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Sign in to ZeroGap</h1>
+            <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Create your ZeroGap account</h1>
             <p className="mt-2 text-sm leading-relaxed text-[#5F6B7A]">
-              Continue with your Google account to access your GST workspace.
+              Sign up with Google first. Next, we’ll set up your business and filing period.
             </p>
           </div>
 
@@ -62,27 +62,31 @@ export default function SignInPage() {
             type="button"
             size="lg"
             className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={checkingSession || signingIn}
+            onClick={handleGoogleSignUp}
+            disabled={checkingSession || creatingAccount}
           >
-            {(checkingSession || signingIn) ? (
+            {(checkingSession || creatingAccount) ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <LogIn className="h-4 w-4" />
+              <UserPlus className="h-4 w-4" />
             )}
-            {checkingSession ? 'Checking session…' : signingIn ? 'Opening Google…' : 'Continue with Google'}
+            {checkingSession ? 'Checking session…' : creatingAccount ? 'Opening Google…' : 'Sign up with Google'}
           </Button>
 
           {error && (
             <div role="alert" className="mt-4 rounded-[10px] border border-[#F31260]/25 bg-[#F31260]/5 p-3 text-xs leading-relaxed text-[#C70E4E]">
-              Sign-in failed: {error}
+              Account creation failed: {error}
             </div>
           )}
 
+          <p className="mt-4 text-center text-[11px] leading-relaxed text-[#5F6B7A]">
+            By continuing, you agree to use ZeroGap for authorised business data only.
+          </p>
+
           <div className="mt-6 border-t border-[#E3E7EE] pt-5 text-center text-xs text-[#5F6B7A]">
-            New to ZeroGap?{' '}
-            <Link href="/sign-up" className="inline-flex items-center gap-1 font-semibold text-[#9E6400] hover:underline">
-              Create an account
+            Already have an account?{' '}
+            <Link href="/sign-in" className="inline-flex items-center gap-1 font-semibold text-[#9E6400] hover:underline">
+              Sign in
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>

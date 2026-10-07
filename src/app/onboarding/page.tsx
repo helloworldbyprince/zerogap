@@ -10,6 +10,7 @@ import { CONFIG } from '@/lib/config';
 import { ArrowRight, CheckCircle2, ChevronLeft, HelpCircle, Sparkles, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 import { WORKSPACE_STORAGE_KEYS } from '@/lib/WorkspaceContext';
+import { auth, onAuthStateChanged } from '@/lib/firebase';
 
 const INDIAN_STATES = [
   { code: '06', name: '06 - Haryana' },
@@ -26,6 +27,7 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDemoParam = searchParams.get('demo') === '1';
+  const [authReady, setAuthReady] = useState(isDemoParam);
 
   const [step, setStep] = useState<number>(1);
   const [businessName, setBusinessName] = useState('Sharma Traders');
@@ -44,6 +46,25 @@ function OnboardingContent() {
       router.push('/app');
     }
   }, [isDemoParam, router]);
+
+  useEffect(() => {
+    if (isDemoParam) return;
+    return onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace('/sign-up');
+        return;
+      }
+      setAuthReady(true);
+    });
+  }, [isDemoParam, router]);
+
+  if (!authReady) {
+    return (
+      <main className="min-h-screen bg-[#F6F7F9] flex items-center justify-center text-sm text-[#5F6B7A]">
+        Checking your account…
+      </main>
+    );
+  }
 
   const validateGstin = (value: string) => {
     const trimmed = value.trim().toUpperCase();

@@ -31,7 +31,7 @@ export function LandingAuthActions({ demoLabel }: { demoLabel: string }) {
         </Link>
       </Button>
       <Button asChild variant="secondary" size="sm">
-        <Link href="/onboarding">
+        <Link href="/sign-up">
           <UserPlus className="h-3.5 w-3.5 sm:hidden" />
           Sign up
         </Link>
