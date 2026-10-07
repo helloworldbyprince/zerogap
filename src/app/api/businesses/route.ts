@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CONFIG } from '@/lib/config';
 import { memoryStore, getFirestoreDb, DEMO_BIZ_ID } from '@/lib/firebase-admin';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import path from 'path';
+
+const LOCAL_BUSINESSES_FILE = path.join(process.cwd(), 'tmp', 'zerogap-businesses.json');
+
+async function loadLocalBusinesses() {
+  try {
+    const saved = JSON.parse(await readFile(LOCAL_BUSINESSES_FILE, 'utf8'));
+    if (Array.isArray(saved)) {
+      saved.forEach((business) => {
+        if (business?.id && business.id !== DEMO_BIZ_ID) memoryStore.businesses.set(business.id, business);
+      });
+    }
+  } catch (error: any) {
+    if (error?.code !== 'ENOENT') console.warn('Local business store read warning:', error);
+  }
+}
+
+async function saveLocalBusinesses() {
+  const businesses = Array.from(memoryStore.businesses.values()).filter((business) => business.id !== DEMO_BIZ_ID);
+  await mkdir(path.dirname(LOCAL_BUSINESSES_FILE), { recursive: true });
+  await writeFile(LOCAL_BUSINESSES_FILE, JSON.stringify(businesses, null, 2), 'utf8');
+}
 
 const BusinessSchema = z.object({
   name: z.string().min(2, 'Business name must have at least 2 characters'),
@@ -12,6 +35,7 @@ const BusinessSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    await loadLocalBusinesses();
     const body = await req.json();
     const parsed = BusinessSchema.safeParse(body);
 
@@ -39,6 +63,7 @@ export async function POST(req: NextRequest) {
 
     // Store in memory
     memoryStore.businesses.set(bizId, newBiz);
+    await saveLocalBusinesses();
 
     // Persist to Firestore if available
     const db = getFirestoreDb();
@@ -61,6 +86,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    await loadLocalBusinesses();
     const list: any[] = [];
     const db = getFirestoreDb();
 
@@ -99,6 +125,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
+    await loadLocalBusinesses();
     const body = await req.json();
     const bizId = z.string().min(1).parse(body.bizId);
     if (bizId === DEMO_BIZ_ID) return NextResponse.json({ error: { code: 'VALIDATION_FAILED', message: 'Demo business is read-only.' } }, { status: 400 });
@@ -108,6 +135,7 @@ export async function PATCH(req: NextRequest) {
     if (!existing) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Business not found.' } }, { status: 404 });
     const updated = { ...existing, ...parsed.data, updatedAt: new Date().toISOString() };
     memoryStore.businesses.set(bizId, updated);
+    await saveLocalBusinesses();
     const db = getFirestoreDb();
     if (db) await db.collection('businesses').doc(bizId).set(updated, { merge: true });
     return NextResponse.json({ business: updated });
