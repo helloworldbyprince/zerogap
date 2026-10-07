@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/layout/Logo';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
   Scale,
   Search,
   Settings,
+  LogOut,
   User as UserIcon,
   X,
 } from 'lucide-react';
@@ -31,14 +32,17 @@ interface AppShellProps {
 
 function AppShellInner({ children }: AppShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang, toggleLang, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { businesses, activeBusiness, activeBusinessId, activePeriod, loading: workspaceLoading, setActiveBusinessId, setActivePeriod } = useWorkspace();
   const [businessMenuOpen, setBusinessMenuOpen] = useState(false);
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const businessMenuRef = useRef<HTMLDivElement>(null);
   const periodMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const periodOptions = [
     { value: '202609', label: 'September 2026' },
     { value: '202608', label: 'August 2026' },
@@ -58,11 +62,13 @@ function AppShellInner({ children }: AppShellProps) {
       const target = event.target as Node;
       if (!businessMenuRef.current?.contains(target)) setBusinessMenuOpen(false);
       if (!periodMenuRef.current?.contains(target)) setPeriodMenuOpen(false);
+      if (!profileMenuRef.current?.contains(target)) setProfileMenuOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setBusinessMenuOpen(false);
         setPeriodMenuOpen(false);
+        setProfileMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', closeMenus);
@@ -76,6 +82,7 @@ function AppShellInner({ children }: AppShellProps) {
   useEffect(() => {
     setBusinessMenuOpen(false);
     setPeriodMenuOpen(false);
+    setProfileMenuOpen(false);
   }, [pathname]);
 
   const navItems = [
@@ -156,8 +163,14 @@ function AppShellInner({ children }: AppShellProps) {
   };
 
   const handleSignOut = async () => {
-    await signOutUser();
+    const result = await signOutUser();
+    if (!result.success) {
+      toast.error(result.error || 'Could not sign out');
+      return;
+    }
+    setProfileMenuOpen(false);
     toast.success('Signed out');
+    router.replace('/sign-in');
   };
 
   return (
@@ -296,12 +309,18 @@ function AppShellInner({ children }: AppShellProps) {
 
             {/* Google User Avatar / Sign-In Button */}
             {user ? (
-              <div className="flex items-center gap-2">
+              <div ref={profileMenuRef} className="relative flex items-center gap-2">
                 <button
                   type="button"
                   className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-[10px] bg-white border border-[#E3E7EE] hover:border-[#F5A524] transition-colors cursor-pointer shadow-xs"
-                  title={`${user.displayName || user.email || 'User'} — click to sign out`}
-                  onClick={handleSignOut}
+                  title={user.displayName || user.email || 'User account'}
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                  onClick={() => {
+                    setProfileMenuOpen((open) => !open);
+                    setBusinessMenuOpen(false);
+                    setPeriodMenuOpen(false);
+                  }}
                 >
                   <div className="h-6 w-6 rounded-full bg-[#F5A524] text-[#1A1A1A] font-bold text-xs flex items-center justify-center overflow-hidden shrink-0">
                     {user.photoURL ? (
@@ -314,7 +333,21 @@ function AppShellInner({ children }: AppShellProps) {
                   <span className="text-xs font-medium text-[#111418] max-w-[120px] truncate hidden sm:inline">
                     {user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User'}
                   </span>
+                  <ChevronDown className={`h-3.5 w-3.5 text-[#5F6B7A] transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
+                {profileMenuOpen && (
+                  <div role="menu" className="absolute right-0 top-full z-50 mt-2 min-w-[150px] rounded-[12px] border border-[#E3E7EE] bg-white p-1.5 shadow-lg">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2 text-left text-xs font-medium text-[#C70E4E] hover:bg-[#F31260]/10"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Log out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Button
