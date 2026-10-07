@@ -1,15 +1,14 @@
 # ZeroGap (Zero gap. Zero notice.)
 ### AI GST Reconciliation & Filing Copilot for Indian MSMEs and Chartered Accountants
 
-[![Live Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-Live%20Prototype%20(asia--south1)-17C964?style=for-the-badge&logo=googlecloud&logoColor=white)](https://zerogap-677303028609.asia-south1.run.app)
+[![Cloud Run Ready](https://img.shields.io/badge/Google%20Cloud%20Run-Deployment%20Ready-17C964?style=for-the-badge&logo=googlecloud&logoColor=white)](#getting-started)
 [![AI Builder Cup 2026](https://img.shields.io/badge/AI%20Builder%20Cup-2026%20BFSI%20Track-F5A524?style=for-the-badge&logo=googlecloud&logoColor=black)](https://github.com/helloworldbyprince/zerogap)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-asia--south1%20(Mumbai)-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://cloud.google.com)
 [![Document AI](https://img.shields.io/badge/Google%20Cloud-Document%20AI%20Invoice%20Parser-17C964?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com/document-ai)
 [![Gemini 2.0](https://img.shields.io/badge/Vertex%20AI-Gemini%202.0%20Flash%20(SSE)-3B82F6?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com/vertex-ai)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15%20App%20Router-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
 
-> **🚀 Live Cloud Run Deployment**: **[https://zerogap-677303028609.asia-south1.run.app](https://zerogap-677303028609.asia-south1.run.app)**  
-> Hosted in region `asia-south1` (Mumbai) on Google Cloud Run for the Google Cloud AI Builder Cup 2026 (BFSI Track).
+> **Deployment:** The application is configured for Google Cloud Run in `asia-south1` (Mumbai). Supply your own project configuration and credentials using environment variables.
 
 ---
 
@@ -98,7 +97,7 @@ Designed to break away from boring, sterile tax software while avoiding unnecess
 ```mermaid
 flowchart TD
     User["User / Chartered Accountant"] -->|Drop Bills PDF/JPG| NextApp["Next.js 15 Web Application (asia-south1)"]
-    NextApp -->|POST /api/uploads (<300ms 202 Accepted)| Storage["Cloud Storage (zerogap-uploads-509816)"]
+    NextApp -->|POST api uploads - 202 Accepted under 300 ms| Storage["Cloud Storage - uploads bucket"]
     
     subgraph GCP["Google Cloud Platform · asia-south1 (Mumbai)"]
         Storage -->|Raw Stream| DocAI["Document AI (Invoice Processor)"]
@@ -108,10 +107,10 @@ flowchart TD
         Worker -->|Audit Engine| MatchingEngine["Deterministic Matching Engine"]
         MatchingEngine -->|Precomputed Snapshot| Firestore
         
-        Gemini["Vertex AI Gemini 2.0 Flash"] -->|SSE Token Stream (<1.5s)| NextApp
+        Gemini["Vertex AI Gemini 2.0 Flash"] -->|SSE token stream under 1.5 seconds| NextApp
     end
 
-    Firestore -->|1-Read Fast Snapshot (<800ms)| Dashboard["Dashboard & Review Table"]
+    Firestore -->|Single snapshot read under 800 ms| Dashboard["Dashboard and Review Table"]
 ```
 
 ### The "Zero-Latency" Rules
@@ -142,7 +141,7 @@ flowchart TD
 
 ## ⚙️ The Standing Config Law (§10)
 
-Per project architecture rules, **no magic numbers or hardcoded thresholds** appear anywhere in the application logic. Every rate, threshold, tolerance, and limit resides centrally in [`src/lib/config.ts`](file:///Users/prince/princekumarcode/production/zerogap/src/lib/config.ts):
+Per project architecture rules, **no magic numbers or hardcoded thresholds** appear anywhere in the application logic. Every rate, threshold, tolerance, and limit resides centrally in [`src/lib/config.ts`](src/lib/config.ts):
 
 ```typescript
 export const CONFIG = {
@@ -194,21 +193,23 @@ npm install
 Create `.env.local` in the project root:
 ```env
 # Google Cloud
-GCP_PROJECT_ID=zerogap-509816
+GCP_PROJECT_ID=your-gcp-project-id
 GCP_REGION=asia-south1
-DOCAI_PROCESSOR_ID=45ff58249590c913
+DOCAI_PROCESSOR_ID=your-document-ai-processor-id
 DOCAI_LOCATION=asia-south1
-STORAGE_BUCKET_UPLOADS=zerogap-uploads-509816
-STORAGE_BUCKET_EXPORTS=zerogap-exports-509816
+STORAGE_BUCKET_UPLOADS=your-uploads-bucket
+STORAGE_BUCKET_EXPORTS=your-exports-bucket
 
 # Firebase Web Config
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyBgOocciXlyWeMomwmPkup_RSzdwMndtT4
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=zerogap-509816.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=zerogap-509816
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=zerogap-509816.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=677303028609
-NEXT_PUBLIC_FIREBASE_APP_ID=1:677303028609:web:dffc44dcc422e63379b680
+NEXT_PUBLIC_FIREBASE_API_KEY=your-firebase-web-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-firebase-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-firebase-app-id
 ```
+
+Never commit `.env.local`, service-account JSON files, access tokens, or private keys. Production should use a dedicated Cloud Run service account and an appropriate secrets manager.
 
 ### 3. Run Locally
 ```bash
@@ -228,10 +229,10 @@ Open [http://localhost:3002](http://localhost:3002) in your browser.
 
 Experience the complete application in under 60 seconds:
 
-1. **Screen 0 (Landing):** Visit [https://zerogap-677303028609.asia-south1.run.app](https://zerogap-677303028609.asia-south1.run.app) $\rightarrow$ Click **"Try the live demo"**.
+1. **Screen 0 (Landing):** Open your local or deployed application $\rightarrow$ Click **"Try the live demo"**.
 2. **Screen 1 (Onboarding):** Pre-seeded with *Sharma Traders (Demo)* $\rightarrow$ Click **"Load demo data — 1 click"**.
 3. **Screen 2 (Dashboard):** View the **₹1,84,200 Money Hero**, test the **"Why? ⓘ"** modal, toggle between English and Hinglish (`हिं`), and inspect the 3 feature cards.
-4. **Screen 3 (F1 Sales Review):** Navigate to [`/app/sales`](https://zerogap-677303028609.asia-south1.run.app/app/sales):
+4. **Screen 3 (F1 Sales Review):** Navigate to `/app/sales`:
    - **Step A:** Test the drag-and-drop zone or click *"Load Sample Bills"* to watch Document AI progress bars parse files in real-time.
    - **Step B:** Review the 24 bills table. Notice the `RATE?` warning pill on `INV-007` (billed 12%, HSN 8471 usually 18%) and `GSTIN?` error on `INV-019`.
    - **Inspection Drawer:** Click on `INV-007` to open the right inspection drawer showing the bill preview and confidence score. Correct the rate to 18% $\rightarrow$ Click *"Save & Re-validate"* $\rightarrow$ Watch the row immediately turn green!
