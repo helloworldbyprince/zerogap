@@ -170,7 +170,7 @@ function AppShellInner({ children }: AppShellProps) {
     }
     setProfileMenuOpen(false);
     toast.success('Signed out');
-    router.replace('/sign-in');
+    router.replace('/');
   };
 
   return (
