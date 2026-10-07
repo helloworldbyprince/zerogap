@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CONFIG } from '@/lib/config';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useWorkspace } from '@/lib/WorkspaceContext';
 import {
   Scale,
   CheckCircle2,
@@ -30,18 +31,44 @@ interface LegitimateCause {
 
 export default function TrianglePage() {
   const { lang, t } = useLanguage();
+  const { activeBusinessId, activePeriod, isDemo } = useWorkspace();
   const isHi = lang === 'hi';
 
   // Three Giant Numbers state
-  const [gstr1Liability] = useState<number>(CONFIG.demo.salesTax); // 151560
-  const [gstr2bCredit] = useState<number>(CONFIG.demo.itcAvailable2B); // 142300
-  const [gstr3bTaxPaid, setGstr3bTaxPaid] = useState<number>(CONFIG.demo.taxPaid3B); // 151560
-  const [gstr3bItcClaimed, setGstr3bItcClaimed] = useState<number>(144600); // 142300 + 2300 gap
+  const [gstr1Liability, setGstr1Liability] = useState<number>(0);
+  const [gstr2bCredit, setGstr2bCredit] = useState<number>(0);
+  const [gstr3bTaxPaid, setGstr3bTaxPaid] = useState<number>(0);
+  const [gstr3bItcClaimed, setGstr3bItcClaimed] = useState<number>(0);
+  const [salesInvoiceCount, setSalesInvoiceCount] = useState(0);
+  const [supplierRecordCount, setSupplierRecordCount] = useState(0);
 
   // Editable 3B inputs state
   const [isEditing3B, setIsEditing3B] = useState<boolean>(false);
-  const [editTaxPaidInput, setEditTaxPaidInput] = useState<string>('151560');
-  const [editItcClaimedInput, setEditItcClaimedInput] = useState<string>('144600');
+  const [editTaxPaidInput, setEditTaxPaidInput] = useState<string>('0');
+  const [editItcClaimedInput, setEditItcClaimedInput] = useState<string>('0');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadTriangle() {
+      try {
+        const response = await fetch(`/api/triangle?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`, { cache: 'no-store', signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || 'Could not load triangle figures');
+        setGstr1Liability(data.gstr1TaxLiability || 0);
+        setGstr2bCredit(data.gstr2bCreditAvailable || 0);
+        setGstr3bTaxPaid(data.gstr3bTaxPaid || 0);
+        setGstr3bItcClaimed(data.gstr3bItcClaimed || 0);
+        setEditTaxPaidInput(String(data.gstr3bTaxPaid || 0));
+        setEditItcClaimedInput(String(data.gstr3bItcClaimed || 0));
+        setSalesInvoiceCount(data.sourceCounts?.salesInvoiceCount || 0);
+        setSupplierRecordCount(data.sourceCounts?.supplierRecordCount || 0);
+      } catch (error: any) {
+        if (!controller.signal.aborted) toast.error(error.message || 'Could not load triangle figures');
+      }
+    }
+    loadTriangle();
+    return () => controller.abort();
+  }, [activeBusinessId, activePeriod]);
 
   // Checkbox causes state
   const [salesCauses, setSalesCauses] = useState<LegitimateCause[]>([
@@ -120,6 +147,11 @@ export default function TrianglePage() {
     const itc = parseFloat(editItcClaimedInput.replace(/,/g, '')) || 0;
     setGstr3bTaxPaid(paid);
     setGstr3bItcClaimed(itc);
+    fetch('/api/triangle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bizId: activeBusinessId, period: activePeriod, gstr1TaxLiability: gstr1Liability, gstr2bCreditAvailable: gstr2bCredit, gstr3bTaxPaid: paid, gstr3bItcClaimed: itc }),
+    }).catch(() => toast.error('Could not save GSTR-3B figures'));
     setIsEditing3B(false);
     toast.success('GSTR-3B self-assessed figures updated and triangle recalculated');
   };
@@ -151,7 +183,7 @@ export default function TrianglePage() {
       const prompt =
         type === 'sales'
           ? `Explain simply: GSTR-1 outward tax liability is ₹${gstr1Liability} and GSTR-3B tax paid is ₹${gstr3bTaxPaid}. Gap is ₹0. Is this Rule 88C compliant?`
-          : `Explain simply: GSTR-2B available ITC is ₹${gstr2bCredit} and GSTR-3B ITC claimed is ₹${gstr3bItcClaimed}. There is a ₹2,300 excess claim. How does Rule 88D DRC-01C apply and what should the business do?`;
+          : `Explain simply: GSTR-2B available ITC is ₹${gstr2bCredit} and GSTR-3B ITC claimed is ₹${gstr3bItcClaimed}. The difference is ₹${Math.abs(gstr3bItcClaimed - gstr2bCredit)}. How does Rule 88D DRC-01C apply and what should the business do?`;
 
       const res = await fetch('/api/explain', {
         method: 'POST',
@@ -222,6 +254,11 @@ export default function TrianglePage() {
   const salesGap = Math.abs(gstr1Liability - gstr3bTaxPaid);
   const isSalesMatch = salesGap <= 1; // within ₹1 tolerance
   const creditGap = gstr3bItcClaimed - gstr2bCredit; // positive means claimed more than 2B
+  const isCreditMatch = Math.abs(creditGap) <= 1;
+  const hasTriangleData = isDemo || salesInvoiceCount > 0 || supplierRecordCount > 0 || gstr3bTaxPaid > 0 || gstr3bItcClaimed > 0;
+  const periodLabel = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(Number(activePeriod.slice(0, 4)), Number(activePeriod.slice(4, 6)) - 1, 1))
+  );
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto pb-16 font-sans">
@@ -233,7 +270,7 @@ export default function TrianglePage() {
               Feature 3 · Statutory Triangle Audit
             </span>
             <Badge variant="red" dot className="text-[11px]">
-              {isHi ? 'सक्रिय अवधि:' : 'Active Period:'} {CONFIG.demo.periodLabel}
+              {isHi ? 'सक्रिय अवधि:' : 'Active Period:'} {periodLabel}{isDemo ? ' · Demo' : ''}
             </Badge>
           </div>
           <h1 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
@@ -288,16 +325,16 @@ export default function TrianglePage() {
           </div>
 
           <div className="pt-4 border-t border-[#E3E7EE] mt-3 flex items-center justify-between">
-            <span className="text-[11px] text-[#5F6B7A]">24 outward invoices</span>
+            <span className="text-[11px] text-[#5F6B7A]">{salesInvoiceCount} outward invoices</span>
             <button
               type="button"
               onClick={() =>
                 setWhyModal({
-                  title: 'GSTR-1 Tax Liability (₹1,51,560)',
+                  title: `GSTR-1 Tax Liability (₹${gstr1Liability.toLocaleString('en-IN')})`,
                   description:
-                    'Extracted from 24 outward sales invoices (18 B2B, 1 B2CL, 5 B2CS) processed in Feature 1.',
+                    `Extracted from ${salesInvoiceCount} outward sales invoices processed in Feature 1.`,
                   subtraction:
-                    'Total Taxable Value (₹8,42,000) × 18% weighted tax rate = ₹1,51,560.',
+                    `Combined tax from the uploaded sales invoices = ₹${gstr1Liability.toLocaleString('en-IN')}.`,
                   note: 'This figure is compiled into your byte-exact GSTR-1 JSON export.',
                 })
               }
@@ -333,16 +370,16 @@ export default function TrianglePage() {
           </div>
 
           <div className="pt-4 border-t border-[#E3E7EE] mt-3 flex items-center justify-between">
-            <span className="text-[11px] text-[#5F6B7A]">42 supplier records</span>
+            <span className="text-[11px] text-[#5F6B7A]">{supplierRecordCount} supplier records</span>
             <button
               type="button"
               onClick={() =>
                 setWhyModal({
-                  title: 'GSTR-2B Credit Available (₹1,42,300)',
+                  title: `GSTR-2B Credit Available (₹${gstr2bCredit.toLocaleString('en-IN')})`,
                   description:
                     'Total eligible Input Tax Credit uploaded by registered vendors in your official GSTR-2B download.',
                   subtraction:
-                    'Sum of IGST + CGST + SGST from 42 compliant supplier records generated on 14th September.',
+                    `Sum of IGST + CGST + SGST from ${supplierRecordCount} imported supplier records.`,
                   note: 'Under Section 16(2)(aa), this is the maximum ITC you can claim without automated Rule 88D flags.',
                 })
               }
@@ -382,7 +419,7 @@ export default function TrianglePage() {
                     value={editTaxPaidInput}
                     onChange={(e) => setEditTaxPaidInput(e.target.value)}
                     className="w-full bg-[#F6F7F9] border border-[#E3E7EE] rounded-[10px] px-2.5 py-1 text-xs text-[#111418] font-mono focus:border-[#F5A524] focus:bg-white focus:outline-none"
-                    placeholder="151560"
+                    placeholder="0"
                   />
                 </div>
                 <div>
@@ -394,7 +431,7 @@ export default function TrianglePage() {
                     value={editItcClaimedInput}
                     onChange={(e) => setEditItcClaimedInput(e.target.value)}
                     className="w-full bg-[#F6F7F9] border border-[#E3E7EE] rounded-[10px] px-2.5 py-1 text-xs text-[#111418] font-mono focus:border-[#F5A524] focus:bg-white focus:outline-none"
-                    placeholder="144600"
+                    placeholder="0"
                   />
                 </div>
                 <Button
@@ -450,7 +487,7 @@ export default function TrianglePage() {
       {/* ─────────────────────────────────────────────────────────────
           2. Check Rows (§9.4 Wireframe Screen 5)
       ────────────────────────────────────────────────────────────── */}
-      <div className="space-y-4">
+      {hasTriangleData ? <div className="space-y-4">
         {/* ROW 1: Sales check */}
         <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3E7EE] pb-3 mb-3">
@@ -552,20 +589,20 @@ export default function TrianglePage() {
         </Card>
 
         {/* ROW 2: Credit check */}
-        <Card className="rounded-[16px] border border-[#F31260]/30 bg-white p-5 shadow-xs">
+        <Card className={`rounded-[16px] border bg-white p-5 shadow-xs ${isCreditMatch ? 'border-[#E3E7EE]' : 'border-[#F31260]/30'}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E3E7EE] pb-3 mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#F31260]/10 border border-[#F31260]/25 flex items-center justify-center text-[#C70E4E]">
-                <AlertTriangle className="h-5 w-5" />
+              <div className={`w-8 h-8 rounded-full border flex items-center justify-center ${isCreditMatch ? 'bg-[#17C964]/10 border-[#17C964]/25 text-[#0F8C43]' : 'bg-[#F31260]/10 border-[#F31260]/25 text-[#C70E4E]'}`}>
+                {isCreditMatch ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
               </div>
 
               <div>
                 <h3 className="font-medium text-sm text-[#111418] flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#F31260]" />
+                  <span className={`h-2.5 w-2.5 rounded-full ${isCreditMatch ? 'bg-[#17C964]' : 'bg-[#F31260]'}`} />
                   {isHi ? 'क्रेडिट जांच: 2B उपलब्ध बनाम 3B दावा' : 'Credit check: 2B available vs 3B claimed'}
                 </h3>
-                <p className="text-xs text-[#C70E4E] font-medium mt-0.5 tabular-nums">
-                  Gap: ₹{creditGap.toLocaleString('en-IN')} {isHi ? 'रुपए 2B से अधिक क्लेम किए गए' : 'more claimed than 2B allows'}
+                <p className={`text-xs font-medium mt-0.5 tabular-nums ${isCreditMatch ? 'text-[#0F8C43]' : 'text-[#C70E4E]'}`}>
+                  {isCreditMatch ? 'Match. Gap ₹0' : `Gap: ₹${Math.abs(creditGap).toLocaleString('en-IN')} ${creditGap > 0 ? 'more claimed than 2B allows' : 'less claimed than available'}`}
                 </p>
               </div>
             </div>
@@ -575,7 +612,7 @@ export default function TrianglePage() {
                 type="button"
                 onClick={() =>
                   setWhyModal({
-                    title: 'Credit Check Math (₹2,300 Gap)',
+                    title: `Credit Check Math (₹${Math.abs(creditGap).toLocaleString('en-IN')} Gap)`,
                     description: 'Comparing GSTR-3B ITC claimed against GSTR-2B credit available.',
                     subtraction: `₹${gstr3bItcClaimed.toLocaleString('en-IN')} (Claimed in 3B) − ₹${gstr2bCredit.toLocaleString('en-IN')} (2B Available) = ₹${creditGap.toLocaleString('en-IN')} Excess Claimed`,
                     note: 'Under Rule 88D, claiming excess ITC generates a DRC-01C notice requiring response or payment within 7 days.',
@@ -612,7 +649,7 @@ export default function TrianglePage() {
           )}
 
           {/* Possible Causes Checklist (§9.4 Wireframe Screen 5) */}
-          <div className="p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs space-y-2.5">
+          {!isCreditMatch && <div className="p-3.5 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs space-y-2.5">
             <span className="font-semibold text-[#111418] text-[11px] uppercase tracking-wider block">
               Possible causes (tick what applies):
             </span>
@@ -645,9 +682,21 @@ export default function TrianglePage() {
             <div className="pt-2 border-t border-[#E3E7EE] text-[11px] text-[#5F6B7A]">
               Under Rule 88D, selecting a legitimate statutory cause prepares your audit reply documentation before filing.
             </div>
+          </div>}
+        </Card>
+      </div> : (
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-8 text-center shadow-xs">
+          <Scale className="mx-auto h-8 w-8 text-[#CBD2DE]" />
+          <h2 className="mt-3 text-base font-semibold text-[#111418]">No triangle data yet</h2>
+          <p className="mx-auto mt-1 max-w-lg text-xs leading-relaxed text-[#5F6B7A]">
+            Upload sales invoices and a GSTR-2B file, then enter the filed GSTR-3B figures to run this audit for {periodLabel}.
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Link href="/app/sales"><Button variant="outline" size="sm">Go to sales upload</Button></Link>
+            <Link href="/app/purchases"><Button variant="primary" size="sm">Go to 2B upload</Button></Link>
           </div>
         </Card>
-      </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           3. Statutory Disclaimer (§9.4 Wireframe — ALWAYS VISIBLE)
