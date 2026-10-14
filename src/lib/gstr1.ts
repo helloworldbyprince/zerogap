@@ -51,12 +51,12 @@ export function buildGstr1Json(invoices: any[], business: any, period: string) {
 
   for (const inv of invoices) {
     const itm = inv.items?.[0] || {
-      hsn: '8471',
-      desc: 'Computer Hardware',
+      hsn: (inv as any).hsn || '',
+      desc: (inv as any).desc || 'General supplies',
       qty: 1,
       uqc: 'NOS',
       txval: inv.totals?.txval || 0,
-      rt: 18,
+      rt: (inv as any).rt || 18,
       iamt: inv.totals?.iamt || 0,
       camt: inv.totals?.camt || 0,
       samt: inv.totals?.samt || 0,
@@ -145,7 +145,7 @@ export function buildGstr1Json(invoices: any[], business: any, period: string) {
     }
 
     // D. Aggregate into HSN summary
-    const cleanHsn = (itm.hsn || '8471').replace(/\D/g, '');
+    const cleanHsn = (itm.hsn || (inv as any).hsn || '').replace(/\D/g, '') || '999999';
     const master = lookupHsn(cleanHsn);
     const hsnDesc = master?.description || itm.desc || 'General Goods';
 

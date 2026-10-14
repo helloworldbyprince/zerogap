@@ -22,10 +22,27 @@ export async function processUploadJob(
   if (!job) return;
 
   try {
-    const biz = memoryStore.businesses.get(bizId) || {
-      stateCode: '06',
-      turnoverSlab: 'UNDER_5CR',
-    };
+    let biz = memoryStore.businesses.get(bizId);
+    if (!biz) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const bDoc = await db.collection('businesses').doc(bizId).get();
+          if (bDoc.exists) {
+            biz = bDoc.data() as any;
+            if (biz) memoryStore.businesses.set(bizId, biz);
+          }
+        } catch (e) {
+          console.warn('Firestore business fetch warning in worker:', e);
+        }
+      }
+    }
+    if (!biz) {
+      biz = {
+        stateCode: '06',
+        turnoverSlab: 'UNDER_5CR',
+      };
+    }
 
     const totalFiles = files.length;
     const processedItems = [];
@@ -96,6 +113,9 @@ export async function processUploadJob(
           totals: extracted.totals,
           docAiConfidence: extracted.docAiConfidence,
           period,
+          kind,
+          bizGstin: biz.gstin,
+          supplierGstin: extracted.supplierGstin,
         });
 
         const invId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -108,8 +128,8 @@ export async function processUploadJob(
           idt: extracted.idt,
           ctin: extracted.ctin,
           ctinName: extracted.ctinName,
-          supplierGstin: extracted.ctin,
-          supplierName: extracted.ctinName,
+          supplierGstin: extracted.supplierGstin || biz.gstin || '',
+          supplierName: extracted.supplierName || biz.name || '',
           pos: extracted.pos,
           rchrg: 'N',
           invTyp: 'R',
@@ -186,6 +206,20 @@ export async function processUploadJob(
     }
     periodDoc.totals.salesTxval = pSalesTxval;
     periodDoc.totals.salesTax = pSalesTax;
+
+    let pPurchaseTxval = 0;
+    for (const inv of memoryStore.purchases.values()) {
+      if (inv.bizId === bizId && inv.period === period) {
+        pPurchaseTxval += inv.totals?.txval || 0;
+      }
+    }
+    for (const inv of memoryStore.invoices.values()) {
+      if (inv.bizId === bizId && inv.period === period && inv.kind === 'purchase' && !memoryStore.purchases.has(inv.id)) {
+        pPurchaseTxval += inv.totals?.txval || 0;
+      }
+    }
+    periodDoc.totals.purchaseTxval = pPurchaseTxval;
+
     if (kind === 'sales') {
       periodDoc.status.f1 = 'done';
     } else if (kind === 'purchase' || kind === 'gstr2b') {
@@ -193,6 +227,15 @@ export async function processUploadJob(
     }
     periodDoc.updatedAt = new Date().toISOString();
     memoryStore.periods.set(periodKey, periodDoc);
+
+    const db = getFirestoreDb();
+    if (db) {
+      try {
+        await db.collection('businesses').doc(bizId).collection('periods').doc(period).set(periodDoc, { merge: true });
+      } catch (e) {
+        console.warn('Firestore period update warning:', e);
+      }
+    }
 
     // Mark job done
     job.status = 'done';

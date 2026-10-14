@@ -1,0 +1,8 @@
+GSTIN of supplier,Trade/Legal name,Invoice number,Invoice type,Invoice Date,Invoice Value,Place of supply,Reverse Charge,Rate (%),Taxable value,Integrated Tax,Central Tax,State/UT Tax,Cess,GSTR-1/IFF Filing Date,ITC Availability,Reason
+"06DEFGH5678K4Z9","Orbit Office Solutions","PUR-MATCH-101","Regular","06-09-2026",29500.00,"06-Haryana","N",18,25000.00,0.00,2250.00,2250.00,0.00,"11-10-2026","Y",""
+"07EFGHI6789L5Z1","Delhi Computer House","PUR-MATCH-102","Regular","09-09-2026",177000.00,"07-Delhi","N",18,150000.00,27000.00,0.00,0.00,0.00,"10-10-2026","Y",""
+"06GHIJK8901N7Z3","Metro Print Systems","PUR-VALUE-MISMATCH-104","Regular","14-09-2026",64900.00,"06-Haryana","N",18,55000.00,0.00,4950.00,4950.00,0.00,"11-10-2026","Y",""
+"06HIJKL9999P8Z9","Apex Furniture Works","PUR-WRONG-GSTIN-105","Regular","18-09-2026",118000.00,"06-Haryana","N",18,100000.00,0.00,9000.00,9000.00,0.00,"11-10-2026","Y",""
+"06IJKLM0123Q9Z5","Steel Rack Industries","PUR-DUPLICATE-106","Regular","21-09-2026",88500.00,"06-Haryana","N",18,75000.00,0.00,6750.00,6750.00,0.00,"10-10-2026","Y",""
+"07AAACC1234D1Z8","Cloudflare India Pvt Ltd","CF-2026-8812","Regular","04-09-2026",53100.00,"07-Delhi","N",18,45000.00,8100.00,0.00,0.00,0.00,"09-10-2026","Y",""
+"06BBBCD5678E1Z4","Airtel Broadband Ltd","AB-90412","Regular","10-09-2026",17700.00,"06-Haryana","N",18,15000.00,0.00,1350.00,1350.00,0.00,"08-10-2026","Y",""

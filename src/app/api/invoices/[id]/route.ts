@@ -9,7 +9,38 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const inv = memoryStore.invoices.get(id);
+    let inv = memoryStore.invoices.get(id);
+
+    if (!inv) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const bizDocs = await db.collection('businesses').get();
+          for (const b of bizDocs.docs) {
+            for (const col of ['salesInvoices', 'purchaseInvoices']) {
+              const snap = await db
+                .collection('businesses')
+                .doc(b.id)
+                .collection('periods')
+                .doc(DEMO_PERIOD)
+                .collection(col)
+                .doc(id)
+                .get();
+              if (snap.exists) {
+                inv = { id: snap.id, ...snap.data() } as any;
+                if (inv) {
+                  memoryStore.invoices.set(id, inv);
+                  break;
+                }
+              }
+            }
+            if (inv) break;
+          }
+        } catch (e) {
+          console.warn('Firestore invoice fetch warning:', e);
+        }
+      }
+    }
 
     if (!inv) {
       return NextResponse.json(
@@ -35,7 +66,38 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    const existing = memoryStore.invoices.get(id);
+    let existing = memoryStore.invoices.get(id);
+    if (!existing) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const bizDocs = await db.collection('businesses').get();
+          for (const b of bizDocs.docs) {
+            for (const col of ['salesInvoices', 'purchaseInvoices']) {
+              const snap = await db
+                .collection('businesses')
+                .doc(b.id)
+                .collection('periods')
+                .doc(DEMO_PERIOD)
+                .collection(col)
+                .doc(id)
+                .get();
+              if (snap.exists) {
+                existing = { id: snap.id, ...snap.data() } as any;
+                if (existing) {
+                  memoryStore.invoices.set(id, existing);
+                  break;
+                }
+              }
+            }
+            if (existing) break;
+          }
+        } catch (e) {
+          console.warn('Firestore invoice fetch warning in PATCH:', e);
+        }
+      }
+    }
+
     if (!existing) {
       return NextResponse.json(
         { error: { code: 'NOT_FOUND', message: `Invoice ${id} not found` } },
@@ -43,29 +105,56 @@ export async function PATCH(
       );
     }
 
-    const biz = memoryStore.businesses.get(existing.bizId || DEMO_BIZ_ID) || {
-      stateCode: '06',
-      turnoverSlab: 'UNDER_5CR',
-    };
+    // Resolve business profile from memoryStore or Firestore
+    let biz = memoryStore.businesses.get(existing.bizId || DEMO_BIZ_ID);
+    if (!biz && existing.bizId) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const bDoc = await db.collection('businesses').doc(existing.bizId).get();
+          if (bDoc.exists) {
+            biz = bDoc.data() as any;
+            if (biz) memoryStore.businesses.set(existing.bizId, biz);
+          }
+        } catch (e) {
+          console.warn('Firestore business fetch warning in PATCH:', e);
+        }
+      }
+    }
 
-    // Merge updated fields
-    const inum = body.inum !== undefined ? body.inum : existing.inum;
-    const idt = body.idt !== undefined ? body.idt : existing.idt;
-    const ctin = body.ctin !== undefined ? body.ctin : existing.ctin;
-    const ctinName = body.ctinName !== undefined ? body.ctinName : existing.ctinName;
-    const pos = body.pos !== undefined ? body.pos : (existing.pos || '07');
+    if (!biz) {
+      biz = {
+        stateCode: '06',
+        turnoverSlab: 'UNDER_5CR',
+      };
+    }
 
-    // Update items or calculate totals
-    let items = body.items !== undefined ? body.items : existing.items;
+    // Merge updated fields with clean formatting
+    const inum = body.inum !== undefined ? String(body.inum).trim() : existing.inum;
+    const idt = body.idt !== undefined ? String(body.idt).trim() : existing.idt;
+    const ctin = body.ctin !== undefined ? String(body.ctin).trim().toUpperCase() : (existing.ctin || '');
+    const ctinName = body.ctinName !== undefined ? String(body.ctinName).trim() : existing.ctinName;
 
-    // Support single item updates (common table inline edit)
+    // Automatic Place of Supply derivation from GSTIN if not explicitly passed
+    let pos = body.pos !== undefined ? String(body.pos).trim() : '';
+    if (!pos) {
+      if (ctin && ctin.length >= 2 && /^\d{2}/.test(ctin)) {
+        pos = ctin.substring(0, 2);
+      } else {
+        pos = existing.pos || biz.stateCode || '06';
+      }
+    }
+
+    // Update items and recalculate tax split
+    let items = body.items !== undefined ? body.items : (existing.items || []);
+
     if (body.hsn !== undefined || body.rt !== undefined || body.txval !== undefined) {
       const itm = { ...(items[0] || {}) };
-      if (body.hsn !== undefined) itm.hsn = body.hsn;
+      if (body.hsn !== undefined) itm.hsn = String(body.hsn).trim();
       if (body.rt !== undefined) itm.rt = Number(body.rt);
       if (body.txval !== undefined) itm.txval = Number(body.txval);
 
-      const isInterState = pos !== biz.stateCode;
+      const isInterState = pos !== (biz.stateCode || '06');
       const tax = Math.round(((itm.txval * itm.rt) / 100) * 100) / 100;
       itm.iamt = isInterState ? tax : 0;
       itm.camt = isInterState ? 0 : Math.round((tax / 2) * 100) / 100;
@@ -93,7 +182,7 @@ export async function PATCH(
       grandTotal,
     });
 
-    // Run Validation Engine (§2.6)
+    // Run Validation Engine with all updated values (§2.6)
     const validation = validateInvoice({
       inum,
       idt,
@@ -102,8 +191,11 @@ export async function PATCH(
       turnoverSlab: biz.turnoverSlab || 'UNDER_5CR',
       items,
       totals,
-      docAiConfidence: existing.docAiConfidence,
+      correctedByUser: true,
       period: existing.period,
+      kind: existing.kind,
+      bizGstin: biz.gstin,
+      supplierGstin: existing.supplierGstin || biz.gstin,
     });
 
     const updatedInvoice = {
@@ -149,7 +241,6 @@ export async function PATCH(
     const periodKey = `${updatedInvoice.bizId}_${updatedInvoice.period}`;
     const periodDoc = memoryStore.periods.get(periodKey);
     if (periodDoc) {
-      // Re-sum all invoices for this period
       let pSalesTxval = 0;
       let pSalesTax = 0;
       for (const inv of memoryStore.invoices.values()) {
@@ -172,6 +263,50 @@ export async function PATCH(
   } catch (error: any) {
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: error.message || 'Failed to update invoice' } },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const existing = memoryStore.invoices.get(id) || memoryStore.purchases.get(id);
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: `Invoice ${id} not found` } },
+        { status: 404 }
+      );
+    }
+
+    memoryStore.invoices.delete(id);
+    memoryStore.purchases.delete(id);
+
+    const db = getFirestoreDb();
+    if (db && existing.bizId && existing.period) {
+      try {
+        const colName = existing.kind === 'sales' ? 'salesInvoices' : 'purchaseInvoices';
+        await db
+          .collection('businesses')
+          .doc(existing.bizId)
+          .collection('periods')
+          .doc(existing.period)
+          .collection(colName)
+          .doc(id)
+          .delete();
+      } catch (e) {
+        console.warn('Firestore invoice delete warning:', e);
+      }
+    }
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: error.message || 'Failed to delete invoice' } },
       { status: 500 }
     );
   }

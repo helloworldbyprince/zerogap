@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/lib/WorkspaceContext';
+import { DashboardSkeleton } from '@/components/ui/ZeroLatencyLoader';
 
 export default function DashboardPage() {
   const { activeBusiness, activeBusinessId, activePeriod, isDemo } = useWorkspace();
@@ -32,35 +33,29 @@ export default function DashboardPage() {
   const [cleanState, setCleanState] = useState(false);
 
   useEffect(() => {
+    let aborted = false;
     async function fetchDashboard() {
       try {
         setLoading(true);
         const res = await fetch(`/api/dashboard?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`);
         const json = await res.json();
-        if (json.period) {
-          setData(json.period);
+        if (!aborted) {
+          setData(json.period || null);
         }
       } catch (e) {
-        toast.error('Could not load this workspace. Please retry.');
+        if (!aborted) toast.error('Could not load this workspace. Please retry.');
       } finally {
-        setLoading(false);
+        if (!aborted) setLoading(false);
       }
     }
     fetchDashboard();
+    return () => {
+      aborted = true;
+    };
   }, [activeBusinessId, activePeriod]);
 
   if (loading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 w-64 bg-[#F0F2F5] rounded-[10px]" />
-        <div className="h-44 w-full bg-white border border-[#E3E7EE] rounded-[16px]" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-32 bg-white border border-[#E3E7EE] rounded-[16px]" />
-          <div className="h-32 bg-white border border-[#E3E7EE] rounded-[16px]" />
-          <div className="h-32 bg-white border border-[#E3E7EE] rounded-[16px]" />
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!data && !isDemo) {

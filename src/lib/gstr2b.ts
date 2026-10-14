@@ -43,7 +43,7 @@ export async function parseGstr2bFile(
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       // Skip header lines
-      if (line.toLowerCase().includes('gstin') || line.toLowerCase().includes('invoice number') || i === 0) {
+      if (i === 0 || line.toLowerCase().includes('invoice number') || line.toLowerCase().startsWith('gstin') || line.toLowerCase().startsWith('"gstin')) {
         continue;
       }
 

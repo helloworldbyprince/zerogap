@@ -8,6 +8,7 @@ import { useLanguage } from '@/lib/LanguageContext';
 import { useWorkspace } from '@/lib/WorkspaceContext';
 import { AlertCircle, AlertTriangle, FileText, Printer, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ReportsSkeleton } from '@/components/ui/ZeroLatencyLoader';
 
 interface ReportIssue { id: string; severity: 'red' | 'amber'; title: string; impact: string; summary: string; }
 interface ReportState {
@@ -86,13 +87,91 @@ export default function ReportsPage() {
       <div className="flex items-center gap-3"><Button variant="outline" size="sm" onClick={() => window.print()} disabled={!hasData || loading}><Printer className="h-4 w-4" />Download PDF</Button><Button variant="primary" size="sm" onClick={handleCopy} disabled={!hasData || loading}><Share2 className="h-4 w-4" />{copied ? 'Copied' : 'Copy summary'}</Button></div>
     </div>
 
-    {!loading && !hasData ? <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-10 text-center shadow-xs"><FileText className="mx-auto h-9 w-9 text-[#CBD2DE]" /><h2 className="mt-3 text-base font-semibold">No report data for {periodLabel}</h2><p className="mt-1 text-sm text-[#5F6B7A]">Upload sales and GSTR-2B files, run reconciliation, and enter GSTR-3B figures first.</p></Card> :
+    {loading ? (
+      <ReportsSkeleton />
+    ) : !hasData ? (
+      <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-10 text-center shadow-xs">
+        <FileText className="mx-auto h-9 w-9 text-[#CBD2DE]" />
+        <h2 className="mt-3 text-base font-semibold">No report data for {periodLabel}</h2>
+        <p className="mt-1 text-sm text-[#5F6B7A]">
+          Upload sales and GSTR-2B files, run reconciliation, and enter GSTR-3B figures first.
+        </p>
+      </Card>
+    ) : (
       <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-6 sm:p-8 space-y-6 shadow-xs print:border-none print:shadow-none print:p-0">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-[#E3E7EE] pb-5 gap-4"><div><h2 className="text-xl sm:text-2xl font-semibold">Monthly Reconciliation Summary — {periodLabel}</h2><div className="text-xs text-[#5F6B7A] mt-1 flex flex-wrap gap-x-4"><span>Business: <strong className="text-[#111418]">{activeBusiness?.name || 'Business'}</strong></span><span>GSTIN: <strong className="text-[#111418] font-mono">{activeBusiness?.gstin || 'Not provided'}</strong></span><span>Generated: <strong className="text-[#111418]">{generatedTimestamp}</strong></span></div></div><Badge variant={report.gapsCount > 0 ? 'amber' : 'emerald'} dot>{report.gapsCount > 0 ? 'Review required' : 'No statutory gaps'}</Badge></div>
-        <div className="p-4 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] flex flex-wrap gap-4 text-sm font-semibold"><span className="text-[#F31260]">Money at risk: ₹{report.moneyAtRisk.toLocaleString('en-IN')}</span><span className="text-[#17C964]">Match score: {report.matchScore}%</span><span className="text-[#F5A524]">{report.gapsCount} statutory {report.gapsCount === 1 ? 'gap' : 'gaps'}</span></div>
-        <div className="space-y-3"><h3 className="text-xs font-semibold uppercase tracking-wider text-[#5F6B7A]">Issues requiring follow-up</h3>{report.issues.length === 0 ? <p className="rounded-[12px] border border-[#E3E7EE] p-4 text-sm text-[#5F6B7A]">No reconciliation issues recorded.</p> : report.issues.map((issue) => <div key={issue.id} className="p-3.5 rounded-[12px] border border-[#E3E7EE] text-xs flex justify-between gap-3"><div className="flex gap-2.5">{issue.severity === 'red' ? <AlertCircle className="h-4 w-4 text-[#F31260]" /> : <AlertTriangle className="h-4 w-4 text-[#F5A524]" />}<div><strong>{issue.title}</strong><p className="mt-0.5 text-[#5F6B7A]">{issue.summary}</p></div></div><strong className="shrink-0 text-[#F31260]">{issue.impact}</strong></div>)}</div>
-        <div className="overflow-x-auto rounded-[12px] border border-[#E3E7EE]"><table className="w-full text-left text-xs"><thead className="bg-[#F6F7F9] text-[#5F6B7A] uppercase text-[11px]"><tr><th className="p-3">Metric</th><th className="p-3">Source</th><th className="p-3 text-right">Taxable Value</th><th className="p-3 text-right">Tax Amount</th></tr></thead><tbody className="divide-y divide-[#E3E7EE]"><tr><td className="p-3 font-semibold">Outward Supplies (GSTR-1)</td><td className="p-3 text-[#5F6B7A]">{report.salesInvoiceCount} sales invoices</td><td className="p-3 text-right">₹{report.salesTxval.toLocaleString('en-IN')}</td><td className="p-3 text-right font-semibold">₹{report.salesTax.toLocaleString('en-IN')}</td></tr><tr><td className="p-3 font-semibold">Inward Supplies (GSTR-2B)</td><td className="p-3 text-[#5F6B7A]">{report.supplierRecordCount} imported records</td><td className="p-3 text-right">—</td><td className="p-3 text-right font-semibold text-[#17C964]">₹{report.itcAvailable.toLocaleString('en-IN')}</td></tr><tr><td className="p-3 font-semibold">Monthly Return (GSTR-3B)</td><td className="p-3 text-[#5F6B7A]">Manually entered filed figures</td><td className="p-3 text-right">Tax paid ₹{report.gstr3bTaxPaid.toLocaleString('en-IN')}</td><td className="p-3 text-right font-semibold">ITC ₹{report.itcClaimed.toLocaleString('en-IN')}</td></tr></tbody></table></div>
-        <div className="pt-4 border-t border-[#E3E7EE] text-[11px] text-[#5F6B7A]">“A gap is a question, not a verdict. Review the possible causes before deciding.”</div>
-      </Card>}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-[#E3E7EE] pb-5 gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-semibold">Monthly Reconciliation Summary — {periodLabel}</h2>
+            <div className="text-xs text-[#5F6B7A] mt-1 flex flex-wrap gap-x-4">
+              <span>Business: <strong className="text-[#111418]">{activeBusiness?.name || 'Business'}</strong></span>
+              <span>GSTIN: <strong className="text-[#111418] font-mono">{activeBusiness?.gstin || 'Not provided'}</strong></span>
+              <span>Generated: <strong className="text-[#111418]">{generatedTimestamp}</strong></span>
+            </div>
+          </div>
+          <Badge variant={report.gapsCount > 0 ? 'amber' : 'emerald'} dot>
+            {report.gapsCount > 0 ? 'Review required' : 'No statutory gaps'}
+          </Badge>
+        </div>
+        <div className="p-4 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] flex flex-wrap gap-4 text-sm font-semibold">
+          <span className="text-[#F31260]">Money at risk: ₹{report.moneyAtRisk.toLocaleString('en-IN')}</span>
+          <span className="text-[#17C964]">Match score: {report.matchScore}%</span>
+          <span className="text-[#F5A524]">{report.gapsCount} statutory {report.gapsCount === 1 ? 'gap' : 'gaps'}</span>
+        </div>
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#5F6B7A]">Issues requiring follow-up</h3>
+          {report.issues.length === 0 ? (
+            <p className="rounded-[12px] border border-[#E3E7EE] p-4 text-sm text-[#5F6B7A]">No reconciliation issues recorded.</p>
+          ) : (
+            report.issues.map((issue) => (
+              <div key={issue.id} className="p-3.5 rounded-[12px] border border-[#E3E7EE] text-xs flex justify-between gap-3">
+                <div className="flex gap-2.5">
+                  {issue.severity === 'red' ? <AlertCircle className="h-4 w-4 text-[#F31260]" /> : <AlertTriangle className="h-4 w-4 text-[#F5A524]" />}
+                  <div>
+                    <strong>{issue.title}</strong>
+                    <p className="mt-0.5 text-[#5F6B7A]">{issue.summary}</p>
+                  </div>
+                </div>
+                <strong className="shrink-0 text-[#F31260]">{issue.impact}</strong>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="overflow-x-auto rounded-[12px] border border-[#E3E7EE]">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#F6F7F9] text-[#5F6B7A] uppercase text-[11px]">
+              <tr>
+                <th className="p-3">Metric</th>
+                <th className="p-3">Source</th>
+                <th className="p-3 text-right">Taxable Value</th>
+                <th className="p-3 text-right">Tax Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E3E7EE]">
+              <tr>
+                <td className="p-3 font-semibold">Outward Supplies (GSTR-1)</td>
+                <td className="p-3 text-[#5F6B7A]">{report.salesInvoiceCount} sales invoices</td>
+                <td className="p-3 text-right">₹{report.salesTxval.toLocaleString('en-IN')}</td>
+                <td className="p-3 text-right font-semibold">₹{report.salesTax.toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-semibold">Inward Supplies (GSTR-2B)</td>
+                <td className="p-3 text-[#5F6B7A]">{report.supplierRecordCount} imported records</td>
+                <td className="p-3 text-right">—</td>
+                <td className="p-3 text-right font-semibold text-[#17C964]">₹{report.itcAvailable.toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-semibold">Monthly Return (GSTR-3B)</td>
+                <td className="p-3 text-[#5F6B7A]">Manually entered filed figures</td>
+                <td className="p-3 text-right">Tax paid ₹{report.gstr3bTaxPaid.toLocaleString('en-IN')}</td>
+                <td className="p-3 text-right font-semibold">ITC ₹{report.itcClaimed.toLocaleString('en-IN')}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="pt-4 border-t border-[#E3E7EE] text-[11px] text-[#5F6B7A]">
+          “A gap is a question, not a verdict. Review the possible causes before deciding.”
+        </div>
+      </Card>
+    )}
   </div>;
 }

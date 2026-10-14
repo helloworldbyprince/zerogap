@@ -19,9 +19,9 @@ export interface InvoiceItem {
 
 export interface ValidationFlag {
   field: string;
-  code: 'GSTIN_INVALID' | 'RATE_MISMATCH' | 'HSN_INVALID_DIGITS' | 'HSN_NOT_FOUND' | 'TAX_MATH_MISMATCH' | 'DATE_INVALID' | 'INUM_MISSING' | 'LOW_CONFIDENCE';
+  code: 'GSTIN_INVALID' | 'RATE_MISMATCH' | 'HSN_INVALID_DIGITS' | 'HSN_NOT_FOUND' | 'TAX_MATH_MISMATCH' | 'DATE_INVALID' | 'INUM_MISSING' | 'LOW_CONFIDENCE' | 'SELLER_GSTIN_MISMATCH' | 'INWARD_BILL_IN_SALES';
   severity: 'error' | 'warning';
-  pillLabel: string; // 'RATE?' | 'HSN?' | 'GSTIN?' | 'MATH?' | 'CONFIDENCE?'
+  pillLabel: string; // 'RATE?' | 'HSN?' | 'GSTIN?' | 'MATH?' | 'CONFIDENCE?' | 'SELLER?' | 'PURCHASE?'
   message: string;
   expected?: any;
   actual?: any;
@@ -43,7 +43,11 @@ export interface ValidateInvoiceInput {
   };
   confidences?: Record<string, number>;
   docAiConfidence?: number;
+  correctedByUser?: boolean;
   period?: string; // YYYYMM
+  kind?: 'sales' | 'purchase';
+  bizGstin?: string;
+  supplierGstin?: string;
 }
 
 export interface ValidationResult {
@@ -131,13 +135,15 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
       const hsnDigits = (item.hsn || '').replace(/\D/g, '');
 
       // HSN Digit count check
-      if (hsnDigits.length < minHsnDigits || hsnDigits.length > 8 || hsnDigits !== item.hsn) {
+      if (hsnDigits.length < minHsnDigits || hsnDigits.length > 8 || hsnDigits !== (item.hsn || '').trim()) {
         flags.push({
           field: 'hsn',
           code: 'HSN_INVALID_DIGITS',
           severity: 'error',
           pillLabel: 'HSN?',
-          message: `HSN must contain ${minHsnDigits}–8 digits for this turnover slab (got "${item.hsn || 'blank'}").`,
+          message: !hsnDigits
+            ? 'HSN code is missing from invoice. Review and enter valid HSN/SAC.'
+            : `HSN must contain ${minHsnDigits}–8 digits for this turnover slab (got "${item.hsn || 'blank'}").`,
           expected: minHsnDigits,
           actual: hsnDigits.length,
         });
@@ -146,7 +152,8 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
       // HSN Master Rate Check
       const masterHsn = lookupHsn(hsnDigits);
       if (masterHsn) {
-        if (masterHsn.gstRate !== item.rt) {
+        const isAllowedTier = masterHsn.allowedRates && masterHsn.allowedRates.includes(item.rt);
+        if (!isAllowedTier && masterHsn.gstRate !== item.rt) {
           flags.push({
             field: 'rt',
             code: 'RATE_MISMATCH',
@@ -178,8 +185,8 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
     }
   }
 
-  // 5. Document AI Confidence Check
-  if (input.docAiConfidence !== undefined && input.docAiConfidence < CONFIG.docAI.confidenceWarnBelow) {
+  // 5. Document AI Confidence Check (Only check if not yet manually verified & saved by user)
+  if (!input.correctedByUser && input.docAiConfidence !== undefined && input.docAiConfidence < CONFIG.docAI.confidenceWarnBelow) {
     flags.push({
       field: 'confidence',
       code: 'LOW_CONFIDENCE',
@@ -189,6 +196,37 @@ export function validateInvoice(input: ValidateInvoiceInput): ValidationResult {
       expected: CONFIG.docAI.confidenceWarnBelow,
       actual: input.docAiConfidence,
     });
+  }
+
+  // 6. Business GSTIN Match Check (Sales vs Purchase entity identity)
+  if (input.bizGstin && input.kind === 'sales' && input.supplierGstin) {
+    const cleanBizGstin = input.bizGstin.trim().toUpperCase();
+    const cleanSupplierGstin = input.supplierGstin.trim().toUpperCase();
+
+    if (cleanSupplierGstin && cleanBizGstin !== cleanSupplierGstin) {
+      const cleanCtin = (input.ctin || '').trim().toUpperCase();
+      if (cleanCtin === cleanBizGstin) {
+        flags.push({
+          field: 'supplierGstin',
+          code: 'INWARD_BILL_IN_SALES',
+          severity: 'error',
+          pillLabel: 'PURCHASE?',
+          message: `This bill lists your business (${cleanBizGstin}) as the Buyer. It appears to be an inward purchase bill, not a sales bill. Upload under Purchases vs 2B.`,
+          expected: cleanBizGstin,
+          actual: cleanSupplierGstin,
+        });
+      } else {
+        flags.push({
+          field: 'supplierGstin',
+          code: 'SELLER_GSTIN_MISMATCH',
+          severity: 'warning',
+          pillLabel: 'SELLER?',
+          message: `Seller GSTIN on invoice (${cleanSupplierGstin}) does not match your registered business GSTIN (${cleanBizGstin}). Outward GSTR-1 bills must be issued by your business.`,
+          expected: cleanBizGstin,
+          actual: cleanSupplierGstin,
+        });
+      }
+    }
   }
 
   const blockingErrorsCount = flags.filter((f) => f.severity === 'error').length;

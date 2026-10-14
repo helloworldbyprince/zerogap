@@ -55,11 +55,81 @@ export async function GET(req: NextRequest) {
         missingInBooksCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.missingInBooksCount : 0,
         mismatchesCount: bizId === DEMO_BIZ_ID ? CONFIG.demo.mismatchesCount : 0,
         items: [],
-        reconciledAt: new Date().toISOString(),
+        reconciledAt: bizId === DEMO_BIZ_ID ? new Date().toISOString() : null,
       };
     }
 
-    return NextResponse.json(result);
+    // Compute purchase files count
+    let purchaseFilesCount = 0;
+    if (bizId === DEMO_BIZ_ID) {
+      purchaseFilesCount = CONFIG.demo.totalBillsCount || 44;
+    } else {
+      const seenPurchaseIds = new Set<string>();
+      for (const inv of memoryStore.purchases.values()) {
+        if (inv.bizId === bizId && inv.period === period) {
+          seenPurchaseIds.add(inv.id);
+        }
+      }
+      for (const inv of memoryStore.invoices.values()) {
+        if (inv.bizId === bizId && inv.period === period && inv.kind === 'purchase') {
+          seenPurchaseIds.add(inv.id);
+        }
+      }
+      purchaseFilesCount = seenPurchaseIds.size;
+
+      if (purchaseFilesCount === 0) {
+        const db = getFirestoreDb();
+        if (db) {
+          try {
+            const snap = await db
+              .collection('businesses')
+              .doc(bizId)
+              .collection('periods')
+              .doc(period)
+              .collection('purchaseInvoices')
+              .get();
+            purchaseFilesCount = snap.size;
+          } catch (e) {
+            console.warn('Firestore purchaseInvoices count warning:', e);
+          }
+        }
+      }
+    }
+
+    // Compute GSTR-2B records count
+    let gstr2bRecordsCount = 0;
+    if (bizId === DEMO_BIZ_ID) {
+      gstr2bRecordsCount = 42;
+    } else {
+      for (const rec of memoryStore.gstr2b.values()) {
+        if (rec.bizId === bizId && rec.period === period) {
+          gstr2bRecordsCount++;
+        }
+      }
+      if (gstr2bRecordsCount === 0) {
+        const db = getFirestoreDb();
+        if (db) {
+          try {
+            const snap = await db
+              .collection('businesses')
+              .doc(bizId)
+              .collection('periods')
+              .doc(period)
+              .collection('gstr2b')
+              .get();
+            gstr2bRecordsCount = snap.size;
+          } catch (e) {
+            console.warn('Firestore gstr2b count warning:', e);
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({
+      ...result,
+      purchaseFilesCount,
+      gstr2bRecordsCount,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: error.message || 'Failed fetching reconciliation results' } },
@@ -87,9 +157,42 @@ export async function POST(req: NextRequest) {
 
     // Gather purchase invoices
     const purchases: any[] = [];
+    const seenPurchaseIds = new Set<string>();
+
     for (const inv of memoryStore.purchases.values()) {
       if (inv.bizId === bizId && inv.period === period) {
+        seenPurchaseIds.add(inv.id);
         purchases.push(inv);
+      }
+    }
+    for (const inv of memoryStore.invoices.values()) {
+      if (inv.bizId === bizId && inv.period === period && inv.kind === 'purchase' && !seenPurchaseIds.has(inv.id)) {
+        seenPurchaseIds.add(inv.id);
+        purchases.push(inv);
+      }
+    }
+
+    // Try Firestore if empty and not demo
+    if (purchases.length === 0 && bizId !== DEMO_BIZ_ID) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const snap = await db
+            .collection('businesses')
+            .doc(bizId)
+            .collection('periods')
+            .doc(period)
+            .collection('purchaseInvoices')
+            .get();
+          for (const doc of snap.docs) {
+            const data = { id: doc.id, ...doc.data() };
+            memoryStore.purchases.set(doc.id, data);
+            memoryStore.invoices.set(doc.id, data);
+            purchases.push(data);
+          }
+        } catch (e) {
+          console.warn('Firestore purchaseInvoices read warning:', e);
+        }
       }
     }
 
@@ -99,6 +202,36 @@ export async function POST(req: NextRequest) {
       if (rec.bizId === bizId && rec.period === period) {
         gstr2bList.push(rec);
       }
+    }
+
+    if (gstr2bList.length === 0 && bizId !== DEMO_BIZ_ID) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const snap = await db
+            .collection('businesses')
+            .doc(bizId)
+            .collection('periods')
+            .doc(period)
+            .collection('gstr2b')
+            .get();
+          for (const doc of snap.docs) {
+            const data = { id: doc.id, ...doc.data() };
+            memoryStore.gstr2b.set(doc.id, data);
+            gstr2bList.push(data);
+          }
+        } catch (e) {
+          console.warn('Firestore gstr2b read warning:', e);
+        }
+      }
+    }
+
+    // If both empty and real business, inform user clearly
+    if (purchases.length === 0 && gstr2bList.length === 0 && bizId !== DEMO_BIZ_ID) {
+      return NextResponse.json(
+        { error: { code: 'NO_DATA', message: 'No purchase bills or GSTR-2B records found. Please upload bills or a GSTR-2B file first.' } },
+        { status: 400 }
+      );
     }
 
     // Execute matching engine (§2.8 & Feature 2)

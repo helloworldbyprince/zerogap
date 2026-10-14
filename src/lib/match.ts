@@ -83,7 +83,7 @@ export function runReconciliation(
 
   // Count occurrences in books to catch DUPLICATE_BOOKING
   for (const p of purchaseInvoices) {
-    const key = `${p.ctin || p.supplierGstin || ''}_${normalizeInum(p.inum)}`;
+    const key = `${p.supplierGstin || p.ctin || ''}_${normalizeInum(p.inum)}`;
     bookedInumCounts.set(key, (bookedInumCounts.get(key) || 0) + 1);
   }
 
@@ -91,8 +91,8 @@ export function runReconciliation(
   for (const inv of purchaseInvoices) {
     const pInum = inv.inum || '';
     const normP = normalizeInum(pInum);
-    const pGstin = (inv.ctin || inv.supplierGstin || '').trim().toUpperCase();
-    const pName = inv.ctinName || inv.supplierName || 'Registered Vendor';
+    const pGstin = (inv.supplierGstin || inv.ctin || '').trim().toUpperCase();
+    const pName = inv.supplierName || inv.ctinName || 'Registered Vendor';
     const pTxval = inv.totals?.txval || 0;
     const pTax = inv.totals?.totalTax || 0;
     const pKey = `${pGstin}_${normP}`;

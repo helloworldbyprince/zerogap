@@ -22,6 +22,7 @@ import {
   Download,
   FileSpreadsheet,
   Check,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/lib/WorkspaceContext';
@@ -33,6 +34,7 @@ export default function SalesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [acknowledgedGate, setAcknowledgedGate] = useState(false);
+  const [downloadingFormat, setDownloadingFormat] = useState<'json' | 'xlsx' | null>(null);
 
   const steps = [
     { id: 'upload', label: '1. Upload', sublabel: 'Bills in (PDF/Image)' },
@@ -86,17 +88,22 @@ export default function SalesPage() {
       return;
     }
 
+    setDownloadingFormat(format);
     const bypassParam = acknowledgedGate ? '&bypassGate=true' : '';
     const downloadUrl = `/api/gstr1/export?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&format=${format}${bypassParam}`;
 
+    const gstin = activeBusiness?.gstin || '06ABCDE1234F1Z1';
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = `GSTR1_06ABCDE1234F1Z5_092026.${format}`;
+    link.download = `GSTR1_${gstin}_${activePeriod}.${format}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
     toast.success(`Downloading GSTR-1 ${format.toUpperCase()} file`);
+    setTimeout(() => {
+      setDownloadingFormat(null);
+    }, 1000);
   };
 
   // Filter sections for Tab Preview in Step C
@@ -107,11 +114,11 @@ export default function SalesPage() {
   // HSN Aggregates
   const hsnMap = new Map<string, any>();
   for (const inv of invoices) {
-    const itm = inv.items?.[0] || { hsn: '8471', desc: 'Computer Parts', qty: 1, txval: inv.totals?.txval || 0, iamt: 0, camt: 0, samt: 0 };
-    const code = itm.hsn || '8471';
+    const itm = inv.items?.[0] || { hsn: (inv as any).hsn || 'General', desc: 'General supplies', qty: 1, txval: inv.totals?.txval || 0, iamt: 0, camt: 0, samt: 0 };
+    const code = itm.hsn || (inv as any).hsn || 'General';
     const ex = hsnMap.get(code) || {
       hsn: code,
-      desc: itm.desc || 'General Goods',
+      desc: itm.desc || 'General Goods/Services',
       qty: 0,
       txval: 0,
       iamt: 0,
@@ -276,13 +283,13 @@ export default function SalesPage() {
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-[#17C964]" />
                 <h3 className="text-lg font-semibold text-[#111418]">
-                  GSTR-1 Package · September 2026
+                  GSTR-1 Package · {new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(activePeriod.slice(0, 4)), Number(activePeriod.slice(4, 6)) - 1, 1)))}
                 </h3>
               </div>
               <p className="text-xs text-[#5F6B7A] mt-1">
                 {invoices.length} invoices prepared for GSTIN{' '}
-                <strong className="text-[#111418] font-mono">06ABCDE1234F1Z5</strong> (Filing period:{' '}
-                <strong className="text-[#111418] font-mono">092026</strong>)
+                <strong className="text-[#111418] font-mono">{activeBusiness?.gstin || '06ABCDE1234F1Z1'}</strong> (Filing period:{' '}
+                <strong className="text-[#111418] font-mono">{activePeriod}</strong>)
               </p>
             </div>
 
@@ -290,22 +297,30 @@ export default function SalesPage() {
               <Button
                 type="button"
                 onClick={() => handleDownload('json')}
-                disabled={!isDownloadUnlocked}
+                disabled={!isDownloadUnlocked || downloadingFormat !== null}
                 variant="primary"
                 className="font-medium text-xs sm:text-sm px-4 h-9 shadow-xs"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Download JSON
+                {downloadingFormat === 'json' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {downloadingFormat === 'json' ? 'Preparing JSON…' : 'Download JSON'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => handleDownload('xlsx')}
-                disabled={!isDownloadUnlocked}
+                disabled={!isDownloadUnlocked || downloadingFormat !== null}
                 className="font-medium text-xs sm:text-sm px-4 h-9 border-[#17C964]/40 text-[#0F8C43] hover:bg-[#17C964]/10 bg-white"
               >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Download Excel
+                {downloadingFormat === 'xlsx' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                )}
+                {downloadingFormat === 'xlsx' ? 'Preparing Excel…' : 'Download Excel'}
               </Button>
             </div>
           </div>
@@ -615,8 +630,8 @@ export default function SalesPage() {
                     <tbody className="divide-y divide-[#E3E7EE]">
                       <tr className="hover:bg-[#F6F7F9] transition-colors">
                         <td className="py-2.5 px-4 text-[#111418] font-medium">Invoices for outward supply</td>
-                        <td className="py-2.5 px-3 font-mono text-[#9E6400]">INV-001</td>
-                        <td className="py-2.5 px-3 font-mono text-[#9E6400]">INV-024</td>
+                        <td className="py-2.5 px-3 font-mono text-[#9E6400]">{invoices.length > 0 ? (invoices[0].inum || 'INV-001') : '—'}</td>
+                        <td className="py-2.5 px-3 font-mono text-[#9E6400]">{invoices.length > 0 ? (invoices[invoices.length - 1].inum || 'INV-001') : '—'}</td>
                         <td className="py-2.5 px-3 text-center text-[#111418] tabular-nums">{invoices.length}</td>
                         <td className="py-2.5 px-3 text-center text-[#5F6B7A]">0</td>
                         <td className="py-2.5 px-3 text-center font-semibold text-[#0F8C43] tabular-nums">

@@ -19,8 +19,10 @@ import {
   X,
   Square,
   CheckSquare,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TriangleSkeleton } from '@/components/ui/ZeroLatencyLoader';
 
 interface LegitimateCause {
   id: string;
@@ -35,6 +37,8 @@ export default function TrianglePage() {
   const isHi = lang === 'hi';
 
   // Three Giant Numbers state
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSaving3B, setIsSaving3B] = useState<boolean>(false);
   const [gstr1Liability, setGstr1Liability] = useState<number>(0);
   const [gstr2bCredit, setGstr2bCredit] = useState<number>(0);
   const [gstr3bTaxPaid, setGstr3bTaxPaid] = useState<number>(0);
@@ -50,6 +54,7 @@ export default function TrianglePage() {
   useEffect(() => {
     const controller = new AbortController();
     async function loadTriangle() {
+      setLoading(true);
       try {
         const response = await fetch(`/api/triangle?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`, { cache: 'no-store', signal: controller.signal });
         const data = await response.json();
@@ -64,6 +69,8 @@ export default function TrianglePage() {
         setSupplierRecordCount(data.sourceCounts?.supplierRecordCount || 0);
       } catch (error: any) {
         if (!controller.signal.aborted) toast.error(error.message || 'Could not load triangle figures');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
     loadTriangle();
@@ -142,18 +149,26 @@ export default function TrianglePage() {
   const [creditAiText, setCreditAiText] = useState<string>('');
 
   // Handle 3B save
-  const handleSave3BFigures = () => {
+  const handleSave3BFigures = async () => {
     const paid = parseFloat(editTaxPaidInput.replace(/,/g, '')) || 0;
     const itc = parseFloat(editItcClaimedInput.replace(/,/g, '')) || 0;
-    setGstr3bTaxPaid(paid);
-    setGstr3bItcClaimed(itc);
-    fetch('/api/triangle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bizId: activeBusinessId, period: activePeriod, gstr1TaxLiability: gstr1Liability, gstr2bCreditAvailable: gstr2bCredit, gstr3bTaxPaid: paid, gstr3bItcClaimed: itc }),
-    }).catch(() => toast.error('Could not save GSTR-3B figures'));
-    setIsEditing3B(false);
-    toast.success('GSTR-3B self-assessed figures updated and triangle recalculated');
+    setIsSaving3B(true);
+    try {
+      const res = await fetch('/api/triangle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bizId: activeBusinessId, period: activePeriod, gstr1TaxLiability: gstr1Liability, gstr2bCreditAvailable: gstr2bCredit, gstr3bTaxPaid: paid, gstr3bItcClaimed: itc }),
+      });
+      if (!res.ok) throw new Error();
+      setGstr3bTaxPaid(paid);
+      setGstr3bItcClaimed(itc);
+      setIsEditing3B(false);
+      toast.success('GSTR-3B self-assessed figures updated and triangle recalculated');
+    } catch {
+      toast.error('Could not save GSTR-3B figures');
+    } finally {
+      setIsSaving3B(false);
+    }
   };
 
   // Toggle causes
@@ -259,6 +274,10 @@ export default function TrianglePage() {
   const periodLabel = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
     new Date(Date.UTC(Number(activePeriod.slice(0, 4)), Number(activePeriod.slice(4, 6)) - 1, 1))
   );
+
+  if (loading) {
+    return <TriangleSkeleton />;
+  }
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto pb-16 font-sans">
@@ -438,10 +457,20 @@ export default function TrianglePage() {
                   size="sm"
                   variant="primary"
                   onClick={handleSave3BFigures}
+                  disabled={isSaving3B}
                   className="w-full h-8 text-xs font-medium mt-1 shadow-xs"
                 >
-                  <Check className="h-3.5 w-3.5 mr-1" />
-                  Save & Recalculate
+                  {isSaving3B ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1" />
+                      Save & Recalculate
+                    </>
+                  )}
                 </Button>
               </div>
             ) : (

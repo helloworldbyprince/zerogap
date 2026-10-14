@@ -36,6 +36,9 @@ export async function GET(req: NextRequest) {
             .get();
 
           allInvoices = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          for (const inv of allInvoices) {
+            memoryStore.invoices.set(inv.id, inv);
+          }
         } catch (e) {
           console.warn('Firestore invoices query warning:', e);
         }

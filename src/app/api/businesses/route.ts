@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const ownerUid = await getAuthenticatedUid(req);
+    console.log('[api/businesses] GET called with ownerUid:', ownerUid);
     await loadLocalBusinesses();
     const list: any[] = [memoryStore.businesses.get(DEMO_BIZ_ID)].filter(Boolean);
     const db = getFirestoreDb();
@@ -106,17 +107,27 @@ export async function GET(req: NextRequest) {
             await db.collection('businesses').doc(id).set(migrated, { merge: true });
           }
         }
-        await saveLocalBusinesses();
         const snap = await db.collection('businesses').where('ownerUid', '==', ownerUid).get();
-        snap.forEach((doc: any) => list.push({ id: doc.id, ...doc.data() }));
-      } catch (e) {
-        console.warn('Firestore read error, falling back to memory store:', e);
+        console.log(`[api/businesses] Firestore returned ${snap.size} businesses for ownerUid:`, ownerUid);
+        snap.forEach((doc: any) => {
+          const data = { id: doc.id, ...doc.data() };
+          list.push(data);
+          memoryStore.businesses.set(doc.id, data);
+        });
+        await saveLocalBusinesses();
+      } catch (e: any) {
+        console.warn('Firestore read error, falling back to memory store:', e?.message || e);
       }
     }
 
     // Merge memory store
+    const isLocalDev = !process.env.K_SERVICE;
     memoryStore.businesses.forEach((biz) => {
-      if ((biz.id === DEMO_BIZ_ID || (ownerUid && biz.ownerUid === ownerUid)) && !list.some((b) => b.id === biz.id)) {
+      const isAllowed =
+        biz.id === DEMO_BIZ_ID ||
+        (ownerUid && biz.ownerUid === ownerUid) ||
+        (isLocalDev && (!ownerUid || biz.ownerUid === ownerUid));
+      if (isAllowed && !list.some((b) => b.id === biz.id)) {
         list.push(biz);
       }
     });

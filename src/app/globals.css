@@ -53,3 +53,24 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #CBD2DE;
 }
+
+/* Zero-Latency Top Progress & Shimmer Animations */
+@keyframes zeroGapProgress {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes zeroGapShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-zero-progress {
+  animation: zeroGapProgress 1.4s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: zeroGapShimmer 1.8s infinite;
+}
+

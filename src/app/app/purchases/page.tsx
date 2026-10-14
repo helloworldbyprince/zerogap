@@ -24,6 +24,10 @@ import {
   AlertOctagon,
   X,
   Check,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -150,9 +154,15 @@ export default function PurchasesPage() {
   const { lang } = useLanguage();
   const { activeBusinessId, activePeriod, isDemo } = useWorkspace();
   const gstr2bInputRef = useRef<HTMLInputElement>(null);
-  const [purchaseFilesCount, setPurchaseFilesCount] = useState<number>(44);
-  const [gstr2bFileName, setGstr2bFileName] = useState<string>('GSTR-2B_September_2026.xlsx');
-  const [gstr2bRecordsCount, setGstr2bRecordsCount] = useState<number>(42);
+  const purchaseInputRef = useRef<HTMLInputElement>(null);
+  const [purchaseFilesCount, setPurchaseFilesCount] = useState<number>(isDemo ? 44 : 0);
+  const [purchaseInvoices, setPurchaseInvoices] = useState<any[]>([]);
+  const [showPurchaseRegister, setShowPurchaseRegister] = useState<boolean>(false);
+  const [loadingPurchasesData, setLoadingPurchasesData] = useState<boolean>(false);
+  const [isUploadingPurchases, setIsUploadingPurchases] = useState(false);
+  const [isDraggingPurchases, setIsDraggingPurchases] = useState(false);
+  const [gstr2bFileName, setGstr2bFileName] = useState<string>(isDemo ? 'GSTR-2B_September_2026.xlsx' : '');
+  const [gstr2bRecordsCount, setGstr2bRecordsCount] = useState<number>(isDemo ? 42 : 0);
   const [isUploading2b, setIsUploading2b] = useState(false);
   const [isMatching, setIsMatching] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
@@ -164,6 +174,10 @@ export default function PurchasesPage() {
   const [cardExplanations, setCardExplanations] = useState<Record<string, string>>({});
   const [streamingCardId, setStreamingCardId] = useState<string | null>(null);
 
+  const periodLabel = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(Number(activePeriod.slice(0, 4)), Number(activePeriod.slice(4, 6)) - 1, 1))
+  );
+
   // Reconciliation results state
   const [results, setResults] = useState<{
     matchScore: number;
@@ -174,41 +188,188 @@ export default function PurchasesPage() {
     missingInBooksCount: number;
     mismatchesCount: number;
     items: MismatchCardData[];
+    reconciledAt?: string | null;
   }>({
-    matchScore: CONFIG.demo.matchScore, // 94%
-    matchedCount: CONFIG.demo.matchedCount, // 41
-    totalBillsCount: CONFIG.demo.totalBillsCount, // 45
-    moneyAtRisk: CONFIG.demo.moneyAtRisk, // 184200
-    missingIn2BCount: CONFIG.demo.missingIn2BCount, // 3
-    missingInBooksCount: CONFIG.demo.missingInBooksCount, // 1
-    mismatchesCount: CONFIG.demo.mismatchesCount, // 4
-    items: INITIAL_DEMO_ITEMS,
+    matchScore: isDemo ? CONFIG.demo.matchScore : 0,
+    matchedCount: isDemo ? CONFIG.demo.matchedCount : 0,
+    totalBillsCount: isDemo ? CONFIG.demo.totalBillsCount : 0,
+    moneyAtRisk: isDemo ? CONFIG.demo.moneyAtRisk : 0,
+    missingIn2BCount: isDemo ? CONFIG.demo.missingIn2BCount : 0,
+    missingInBooksCount: isDemo ? CONFIG.demo.missingInBooksCount : 0,
+    mismatchesCount: isDemo ? CONFIG.demo.mismatchesCount : 0,
+    items: isDemo ? INITIAL_DEMO_ITEMS : [],
+    reconciledAt: isDemo ? new Date().toISOString() : null,
   });
 
-  // Fetch initial results from API
+  // Load data cleanly per workspace and period
   useEffect(() => {
-    async function loadReco() {
-      try {
-        const res = await fetch(`/api/reconcile?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`, { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          setResults({
-            ...data,
-            items: isDemo && (!data.items || data.items.length === 0) ? INITIAL_DEMO_ITEMS : (data.items || []),
-          });
+    let aborted = false;
+
+    if (isDemo) {
+      setResults({
+        matchScore: CONFIG.demo.matchScore,
+        matchedCount: CONFIG.demo.matchedCount,
+        totalBillsCount: CONFIG.demo.totalBillsCount,
+        moneyAtRisk: CONFIG.demo.moneyAtRisk,
+        missingIn2BCount: CONFIG.demo.missingIn2BCount,
+        missingInBooksCount: CONFIG.demo.missingInBooksCount,
+        mismatchesCount: CONFIG.demo.mismatchesCount,
+        items: INITIAL_DEMO_ITEMS,
+        reconciledAt: new Date().toISOString(),
+      });
+      setPurchaseFilesCount(44);
+      setGstr2bFileName('GSTR-2B_September_2026.xlsx');
+      setGstr2bRecordsCount(42);
+      setPurchaseInvoices([]);
+      setShowPurchaseRegister(false);
+    } else {
+      setResults({
+        matchScore: 0,
+        matchedCount: 0,
+        totalBillsCount: 0,
+        moneyAtRisk: 0,
+        missingIn2BCount: 0,
+        missingInBooksCount: 0,
+        mismatchesCount: 0,
+        items: [],
+        reconciledAt: null,
+      });
+      setPurchaseFilesCount(0);
+      setGstr2bFileName('');
+      setGstr2bRecordsCount(0);
+      setPurchaseInvoices([]);
+      setShowPurchaseRegister(false);
+
+      async function loadRealData() {
+        setLoadingPurchasesData(true);
+        try {
+          const recoRes = await fetch(
+            `/api/reconcile?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}`,
+            { cache: 'no-store' }
+          );
+          if (recoRes.ok && !aborted) {
+            const data = await recoRes.json();
+            setResults({
+              ...data,
+              items: data.items || [],
+            });
+            if (typeof data.purchaseFilesCount === 'number') {
+              setPurchaseFilesCount(data.purchaseFilesCount);
+            }
+            if (typeof data.gstr2bRecordsCount === 'number') {
+              setGstr2bRecordsCount(data.gstr2bRecordsCount);
+              if (data.gstr2bRecordsCount > 0) {
+                setGstr2bFileName(`GSTR-2B_${activePeriod}.xlsx`);
+              }
+            }
+          }
+
+          const invRes = await fetch(
+            `/api/invoices?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&kind=purchase`,
+            { cache: 'no-store' }
+          );
+          if (invRes.ok && !aborted) {
+            const invData = await invRes.json();
+            const invs = invData.invoices || [];
+            setPurchaseInvoices(invs);
+            setPurchaseFilesCount(invs.length);
+          }
+        } catch (e) {
+          console.warn('Failed loading purchases data:', e);
+        } finally {
+          if (!aborted) setLoadingPurchasesData(false);
         }
-      } catch (e) {
-        console.warn('Failed loading reconciliation results from API, using seeded defaults:', e);
       }
+      loadRealData();
     }
-    loadReco();
+
+    return () => {
+      aborted = true;
+    };
   }, [activeBusinessId, activePeriod, isDemo]);
 
-  useEffect(() => {
-    setPurchaseFilesCount(isDemo ? 44 : 0);
-    setGstr2bFileName(isDemo ? 'GSTR-2B_September_2026.xlsx' : '');
-    setGstr2bRecordsCount(isDemo ? 42 : 0);
-  }, [isDemo, activeBusinessId, activePeriod]);
+  // Handle uploading vendor purchase bills (PDF / Images)
+  const handlePurchaseFiles = async (files: File[]) => {
+    if (files.length === 0 || isDemo || isUploadingPurchases) return;
+    if (files.length > CONFIG.uploads.maxFiles) {
+      toast.error(`Maximum ${CONFIG.uploads.maxFiles} files allowed per upload.`);
+      return;
+    }
+
+    setIsUploadingPurchases(true);
+    const toastId = toast.loading(`Uploading ${files.length} purchase ${files.length === 1 ? 'bill' : 'bills'}...`);
+
+    try {
+      const formData = new FormData();
+      formData.append('bizId', activeBusinessId);
+      formData.append('period', activePeriod);
+      formData.append('kind', 'purchase');
+      files.forEach((file) => formData.append('files', file));
+
+      const response = await fetch('/api/uploads', { method: 'POST', body: formData });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || 'Could not upload purchase bills');
+
+      let completedJob: any = null;
+      for (let attempt = 0; attempt < CONFIG.uploads.maxPollAttempts; attempt += 1) {
+        const jobResponse = await fetch(`/api/jobs/${encodeURIComponent(payload.jobId)}`, { cache: 'no-store' });
+        const jobPayload = await jobResponse.json();
+        if (!jobResponse.ok) throw new Error(jobPayload.error?.message || 'Could not read upload progress');
+        if (jobPayload.job?.status === 'error') throw new Error(jobPayload.job.error || 'Could not parse purchase bills');
+        if (jobPayload.job?.status === 'done') {
+          completedJob = jobPayload.job;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, CONFIG.uploads.jobPollMs));
+      }
+      if (!completedJob) throw new Error('Purchase bills processing timed out.');
+
+      // Refresh invoices
+      const invRes = await fetch(
+        `/api/invoices?bizId=${encodeURIComponent(activeBusinessId)}&period=${encodeURIComponent(activePeriod)}&kind=purchase`,
+        { cache: 'no-store' }
+      );
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        const invs = invData.invoices || [];
+        setPurchaseInvoices(invs);
+        setPurchaseFilesCount(invs.length);
+      } else {
+        setPurchaseFilesCount((prev) => prev + (completedJob.processedCount || files.length));
+      }
+
+      toast.success(
+        `${completedJob.processedCount || files.length} purchase ${files.length === 1 ? 'bill' : 'bills'} processed & added to register!`,
+        { id: toastId }
+      );
+    } catch (error: any) {
+      toast.error(error.message || 'Could not upload purchase bills', { id: toastId });
+    } finally {
+      setIsUploadingPurchases(false);
+    }
+  };
+
+  const handlePurchaseUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      handlePurchaseFiles(Array.from(event.target.files));
+    }
+    event.target.value = '';
+  };
+
+  const handleDeletePurchaseInvoice = async (invId: string) => {
+    try {
+      const res = await fetch(`/api/invoices/${encodeURIComponent(invId)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setPurchaseInvoices((prev) => prev.filter((i) => i.id !== invId));
+        setPurchaseFilesCount((prev) => Math.max(0, prev - 1));
+        toast.success('Purchase bill removed');
+      } else {
+        toast.error('Could not delete bill');
+      }
+    } catch {
+      toast.error('Could not delete bill');
+    }
+  };
 
   const handleGstr2bUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -253,8 +414,18 @@ export default function PurchasesPage() {
 
   // Run match handler
   const handleRunMatch = async () => {
+    if (!isDemo && purchaseFilesCount === 0 && gstr2bRecordsCount === 0) {
+      toast.error('Please upload purchase bills or a GSTR-2B file before running reconciliation.');
+      return;
+    }
+
     setIsMatching(true);
-    toast.info('Running deterministic matching engine across 45 records...', { duration: 1500 });
+    toast.info(
+      isDemo
+        ? 'Running deterministic matching engine across demo records...'
+        : `Running matching engine across ${purchaseFilesCount} purchase bills and ${gstr2bRecordsCount} GSTR-2B records...`,
+      { duration: 1500 }
+    );
 
     try {
       const res = await fetch('/api/reconcile', {
@@ -266,21 +437,19 @@ export default function PurchasesPage() {
         }),
       });
 
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setTimeout(() => {
           setIsMatching(false);
           setResults({ ...data.result, items: data.result?.items || [] });
           toast.success(`Matching complete! Match score: ${data.matchScore}%`);
-        }, 1200);
+        }, 800);
       } else {
-        throw new Error('Reconciliation API error');
+        throw new Error(data.error?.message || 'Reconciliation API error');
       }
-    } catch (e) {
-      setTimeout(() => {
-        setIsMatching(false);
-        toast.success('Matching evaluated! Found 14 items requiring review.');
-      }, 1000);
+    } catch (e: any) {
+      setIsMatching(false);
+      toast.error(e?.message || 'Matching failed. Please retry.');
     }
   };
 
@@ -403,8 +572,14 @@ export default function PurchasesPage() {
               Feature 2 · Inward Supplies & Reconciliation
             </span>
             <Badge variant="amber" dot className="text-[11px]">
-              Active Period: {CONFIG.demo.periodLabel}
+              Active Period: {periodLabel}
             </Badge>
+            {loadingPurchasesData && (
+              <Badge variant="amber" className="text-[11px] flex items-center gap-1.5 bg-[#FDF6E4] text-[#9E6400] border-[#F5A524]/30 shadow-xs animate-in fade-in-0">
+                <Loader2 className="h-3 w-3 animate-spin text-[#F5A524]" />
+                <span>Syncing…</span>
+              </Badge>
+            )}
           </div>
           <h1 className="text-2xl sm:text-[30px] font-semibold tracking-[-0.02em] text-[#111418]">
             Purchases vs GSTR-2B Matching
@@ -431,7 +606,23 @@ export default function PurchasesPage() {
       {/* Two Dropzones (§9.4 Wireframe Screen 4) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left Dropzone: Purchase bills */}
-        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 flex flex-col justify-between hover:border-[#F5A524]/60 transition-colors shadow-xs">
+        <Card
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!isDemo) setIsDraggingPurchases(true);
+          }}
+          onDragLeave={() => setIsDraggingPurchases(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingPurchases(false);
+            if (!isDemo && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              handlePurchaseFiles(Array.from(e.dataTransfer.files));
+            }
+          }}
+          className={`rounded-[16px] border bg-white p-5 flex flex-col justify-between transition-colors shadow-xs ${
+            isDraggingPurchases ? 'border-[#F5A524] bg-[#FDF6E4]/40 ring-2 ring-[#F5A524]/20' : 'border-[#E3E7EE] hover:border-[#F5A524]/60'
+          }`}
+        >
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5">
@@ -441,40 +632,116 @@ export default function PurchasesPage() {
                 <div>
                   <h3 className="font-semibold text-sm text-[#111418] flex items-center gap-1.5">
                     1. Purchase Bills
-                    <Badge variant="emerald" className="text-[10px] px-2 py-0">Loaded</Badge>
+                    <Badge variant={purchaseFilesCount > 0 ? 'emerald' : 'neutral'} className="text-[10px] px-2 py-0">
+                      {isDemo ? 'Loaded' : purchaseFilesCount > 0 ? `Loaded (${purchaseFilesCount})` : 'Pending'}
+                    </Badge>
                   </h3>
                   <p className="text-xs text-[#5F6B7A]">
-                    Drop vendor bills (PDF / Photo) or review register
+                    {isDemo
+                      ? 'Demo purchase bills in register'
+                      : purchaseFilesCount > 0
+                      ? 'Vendor bills in purchase register'
+                      : 'Upload vendor bills (PDF / Photo) or invoices'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-dashed border-[#CBD2DE] bg-[#F6F7F9] text-center my-2">
+            <div
+              onClick={() => {
+                if (!isDemo) purchaseInputRef.current?.click();
+              }}
+              className={`p-3.5 rounded-xl border border-dashed text-center my-2 transition-colors ${
+                !isDemo ? 'cursor-pointer hover:bg-[#F0F2F5]' : ''
+              } ${isDraggingPurchases ? 'border-[#F5A524] bg-white' : 'border-[#CBD2DE] bg-[#F6F7F9]'}`}
+            >
               <p className="text-xs font-medium text-[#111418] flex items-center justify-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-[#0F8C43] stroke-[3]" />
-                {purchaseFilesCount} purchase invoices loaded for {CONFIG.demo.periodLabel}
+                {purchaseFilesCount > 0 ? (
+                  <Check className="h-3.5 w-3.5 text-[#0F8C43] stroke-[3]" />
+                ) : (
+                  <UploadCloud className="h-3.5 w-3.5 text-[#5F6B7A]" />
+                )}
+                {isDemo
+                  ? `${purchaseFilesCount} purchase invoices loaded for ${periodLabel}`
+                  : purchaseFilesCount > 0
+                  ? `${purchaseFilesCount} purchase invoices loaded for ${periodLabel}`
+                  : `No purchase bills uploaded yet for ${periodLabel}`}
               </p>
               <p className="text-[11px] text-[#5F6B7A] mt-0.5">
-                Includes Sharma Traders, Aggarwal Ent, Shiva Fasteners, Zenith, etc.
+                {isDemo
+                  ? 'Includes Sharma Traders, Aggarwal Ent, Shiva Fasteners, Zenith, etc.'
+                  : purchaseFilesCount > 0
+                  ? `${purchaseFilesCount} vendor bills processed with Document AI and indexed for GSTR-2B matching`
+                  : 'Drop vendor bills here (PDF, PNG, JPG) or click to browse'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <span className="text-[11px] text-[#5F6B7A]">Source: Internal Accounts</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setPurchaseFilesCount(44);
-                toast.success('44 demo purchase bills loaded in register');
-              }}
-              className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
-            >
-              <RotateCcw className="h-3 w-3 mr-1" />
-              Reload Demo Bills
-            </Button>
+            <span className="text-[11px] text-[#5F6B7A]">
+              {isDemo ? 'Source: Internal Accounts' : 'Real Workspace Inward Register'}
+            </span>
+            {isDemo ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setPurchaseFilesCount(44);
+                  toast.success('44 demo purchase bills loaded in register');
+                }}
+                className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Reload Demo Bills
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={purchaseInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  onChange={handlePurchaseUpload}
+                  className="hidden"
+                />
+                {purchaseFilesCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPurchaseRegister((prev) => !prev)}
+                    className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
+                  >
+                    {showPurchaseRegister ? (
+                      <>
+                        <ChevronUp className="h-3 w-3 mr-1" />
+                        Hide Register
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3 w-3 mr-1" />
+                        View Register
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isUploadingPurchases}
+                  onClick={() => purchaseInputRef.current?.click()}
+                  className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
+                >
+                  <UploadCloud className="h-3 w-3 mr-1" />
+                  {isUploadingPurchases
+                    ? 'Processing Bills…'
+                    : purchaseFilesCount > 0
+                    ? 'Upload More Bills'
+                    : 'Upload Purchase Bills'}
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -489,33 +756,66 @@ export default function PurchasesPage() {
                 <div>
                   <h3 className="font-semibold text-sm text-[#111418] flex items-center gap-1.5">
                     2. GSTR-2B File
-                    <Badge variant="emerald" className="text-[10px] px-2 py-0">Active</Badge>
+                    <Badge variant={gstr2bRecordsCount > 0 ? 'emerald' : 'neutral'} className="text-[10px] px-2 py-0">
+                      {isDemo ? 'Active' : gstr2bRecordsCount > 0 ? 'Active' : 'Pending'}
+                    </Badge>
                   </h3>
                   <p className="text-xs text-[#5F6B7A]">
-                    {isDemo ? 'Demo snapshot of a GSTN-downloaded file' : 'Upload Excel (.xlsx) or CSV downloaded manually from GSTN'}
+                    {isDemo
+                      ? 'Demo snapshot of a GSTN-downloaded file'
+                      : 'Upload Excel (.xlsx) or CSV downloaded manually from GST Portal'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-dashed border-[#CBD2DE] bg-[#F6F7F9] text-center my-2">
+            <div
+              onClick={() => {
+                if (!isDemo) gstr2bInputRef.current?.click();
+              }}
+              className={`p-3.5 rounded-xl border border-dashed border-[#CBD2DE] bg-[#F6F7F9] text-center my-2 ${
+                !isDemo ? 'cursor-pointer hover:bg-[#F0F2F5]' : ''
+              }`}
+            >
               <p className="text-xs font-medium text-[#111418] truncate flex items-center justify-center gap-1.5">
-                {gstr2bFileName ? <Check className="h-3.5 w-3.5 text-[#0F8C43] stroke-[3]" /> : <UploadCloud className="h-3.5 w-3.5 text-[#5F6B7A]" />}
-                {gstr2bFileName || 'No GSTR-2B file uploaded'}
+                {gstr2bRecordsCount > 0 ? (
+                  <Check className="h-3.5 w-3.5 text-[#0F8C43] stroke-[3]" />
+                ) : (
+                  <UploadCloud className="h-3.5 w-3.5 text-[#5F6B7A]" />
+                )}
+                {isDemo
+                  ? gstr2bFileName
+                  : gstr2bRecordsCount > 0
+                  ? gstr2bFileName || `GSTR-2B_${activePeriod}.xlsx`
+                  : 'No GSTR-2B file uploaded'}
               </p>
               <p className="text-[11px] text-[#5F6B7A] mt-0.5">
-                {gstr2bFileName ? `${gstr2bRecordsCount} inward supplier records parsed & indexed` : 'Download GSTR-2B from GSTN, then upload it here'}
+                {isDemo
+                  ? '42 inward supplier records parsed & indexed'
+                  : gstr2bRecordsCount > 0
+                  ? `${gstr2bRecordsCount} inward supplier records parsed & indexed`
+                  : 'Download GSTR-2B from GST Portal, then upload it here'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <span className="text-[11px] text-[#5F6B7A]">{isDemo ? 'Synthetic demo data · no GSTN connection' : 'Manual import · no direct GSTN connection'}</span>
+            <span className="text-[11px] text-[#5F6B7A]">
+              {isDemo ? 'Synthetic demo data · no GSTN connection' : 'Manual import · no direct GSTN connection'}
+            </span>
             {isDemo ? (
-              <Badge variant="neutral" className="text-[10px]">Demo snapshot</Badge>
+              <Badge variant="neutral" className="text-[10px]">
+                Demo snapshot
+              </Badge>
             ) : (
               <>
-                <input ref={gstr2bInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleGstr2bUpload} className="hidden" />
+                <input
+                  ref={gstr2bInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleGstr2bUpload}
+                  className="hidden"
+                />
                 <Button
                   variant="outline"
                   size="sm"
@@ -524,13 +824,111 @@ export default function PurchasesPage() {
                   className="text-xs h-7 text-[#5F6B7A] hover:text-[#111418]"
                 >
                   <UploadCloud className="h-3 w-3 mr-1" />
-                  {isUploading2b ? 'Importing…' : gstr2bFileName ? 'Replace GSTR-2B file' : 'Upload GSTR-2B file'}
+                  {isUploading2b
+                    ? 'Importing…'
+                    : gstr2bRecordsCount > 0
+                    ? 'Replace GSTR-2B file'
+                    : 'Upload GSTR-2B file'}
                 </Button>
               </>
             )}
           </div>
         </Card>
       </div>
+
+      {/* Expandable Purchase Bills Register Drawer */}
+      {showPurchaseRegister && !isDemo && (
+        <Card className="rounded-[16px] border border-[#E3E7EE] bg-white p-5 shadow-xs animate-in fade-in-0 duration-200">
+          <div className="flex items-center justify-between border-b border-[#E3E7EE] pb-3 mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-[#111418]">
+                Purchase Register — {periodLabel}
+              </h3>
+              <p className="text-xs text-[#5F6B7A]">
+                {purchaseInvoices.length} invoices extracted from vendor bills
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPurchaseRegister(false)}
+              className="text-xs h-7"
+            >
+              Close
+            </Button>
+          </div>
+
+          {purchaseInvoices.length === 0 ? (
+            <div className="text-center py-6 text-xs text-[#5F6B7A]">
+              No purchase bills in register yet. Use the upload button above to add vendor invoices.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-[#E3E7EE] bg-[#F6F7F9] text-[#5F6B7A] uppercase text-[10px] tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-2.5 px-3">Invoice #</th>
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Supplier Name</th>
+                    <th className="py-2.5 px-3">Supplier GSTIN</th>
+                    <th className="py-2.5 px-3 text-right">Taxable Value (₹)</th>
+                    <th className="py-2.5 px-3 text-right">Total Tax (₹)</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                    <th className="py-2.5 px-3 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E3E7EE]">
+                  {purchaseInvoices.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-[#F6F7F9] transition-colors">
+                      <td className="py-2.5 px-3 font-mono font-medium text-[#111418]">
+                        {inv.inum || '—'}
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-[#5F6B7A]">{inv.idt || '—'}</td>
+                      <td className="py-2.5 px-3 text-[#111418] max-w-[180px] truncate">
+                        {inv.supplierName || inv.ctinName || 'Vendor'}
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-[#5F6B7A]">
+                        {inv.supplierGstin || inv.ctin || '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-medium text-[#111418] tabular-nums">
+                        ₹{Number(inv.totals?.txval || 0).toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-[#111418] tabular-nums">
+                        ₹{Number(inv.totals?.totalTax || 0).toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <Badge
+                          variant={
+                            inv.status === 'green'
+                              ? 'emerald'
+                              : inv.status === 'amber'
+                              ? 'amber'
+                              : 'red'
+                          }
+                          dot
+                          className="text-[10px] py-0 px-2"
+                        >
+                          {inv.status || 'verified'}
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePurchaseInvoice(inv.id)}
+                          className="h-6 w-6 p-0 text-[#C70E4E] hover:bg-[#F31260]/10 hover:text-[#F31260]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Primary Action Button: ( Run match ) */}
       <div className="flex justify-center sm:justify-end">
@@ -601,7 +999,9 @@ export default function PurchasesPage() {
                 Matched {results.matchedCount}/{results.totalBillsCount}
               </div>
               <p className="text-xs text-[#5F6B7A] mt-1">
-                41 purchase bills match supplier 2B data within statutory ±₹0.01 tolerance.
+                {results.totalBillsCount === 0
+                  ? 'Upload vendor bills and GSTR-2B file to start matching.'
+                  : `${results.matchedCount} of ${results.totalBillsCount} purchase bills match supplier 2B data within statutory ±₹0.01 tolerance.`}
               </p>
             </div>
           </div>
@@ -691,7 +1091,11 @@ export default function PurchasesPage() {
       <div className="space-y-4">
         {filteredItems.length === 0 ? (
           <div className="p-8 text-center rounded-[16px] border border-[#E3E7EE] bg-white text-[#5F6B7A]">
-            No records found for this filter tab.
+            {results.totalBillsCount === 0 && !isDemo
+              ? 'No reconciliation run yet. Upload purchase bills and GSTR-2B file above, then click Run match.'
+              : results.mismatchesCount === 0 && results.missingIn2BCount === 0 && results.missingInBooksCount === 0
+              ? 'All clear! 100% of purchase bills match your GSTR-2B with zero tax credit at risk.'
+              : 'No records found for this filter tab.'}
           </div>
         ) : (
           filteredItems.map((item) => {

@@ -28,9 +28,11 @@ import {
   ShieldCheck,
   Info,
   UploadCloud,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { TableSkeleton } from '@/components/ui/ZeroLatencyLoader';
 
 export interface InvoiceRecord {
   id: string;
@@ -120,6 +122,7 @@ export function InvoiceReviewTable({
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isConfirmingGreen, setIsConfirmingGreen] = useState(false);
   const [acknowledgedRedRows, setAcknowledgedRedRows] = useState(false);
 
   // Editable Drawer State
@@ -133,9 +136,9 @@ export function InvoiceReviewTable({
     rt: 18,
   });
 
-  const fetchInvoices = async (signal?: AbortSignal) => {
+  const fetchInvoices = async (signal?: AbortSignal, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await fetch(`/api/invoices?bizId=${encodeURIComponent(bizId)}&period=${encodeURIComponent(period)}&kind=sales`, { signal, cache: 'no-store' });
       const data = await res.json();
       if (!signal?.aborted && data.invoices) {
@@ -143,9 +146,9 @@ export function InvoiceReviewTable({
         setSummary(data.summary);
       }
     } catch (e: any) {
-      if (!signal?.aborted) toast.error('Failed to load invoice list');
+      if (!signal?.aborted && !silent) toast.error('Failed to load invoice list');
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      if (!signal?.aborted && !silent) setLoading(false);
     }
   };
 
@@ -161,15 +164,19 @@ export function InvoiceReviewTable({
 
   const handleRowClick = (inv: InvoiceRecord) => {
     setSelectedInvoice(inv);
-    const itm = inv.items?.[0] || { hsn: '8471', txval: inv.totals?.txval || 0, rt: 18 };
+    const itm = inv.items?.[0] || {
+      hsn: (inv as any).hsn || '',
+      txval: inv.totals?.txval || 0,
+      rt: (inv as any).rt || 18,
+    };
     setDrawerForm({
-      inum: inv.inum,
-      idt: inv.idt,
+      inum: inv.inum || '',
+      idt: inv.idt || '',
       ctin: inv.ctin || '',
       ctinName: inv.ctinName || '',
-      hsn: itm.hsn,
-      txval: itm.txval,
-      rt: itm.rt,
+      hsn: itm.hsn || (inv as any).hsn || '',
+      txval: itm.txval || 0,
+      rt: itm.rt || 18,
     });
     setDrawerOpen(true);
   };
@@ -197,8 +204,8 @@ export function InvoiceReviewTable({
       setInvoices((prev) => prev.map((item) => (item.id === updatedInv.id ? updatedInv : item)));
       setSelectedInvoice(updatedInv);
 
-      // Refresh overall summary
-      fetchInvoices();
+      // Refresh overall summary silently without table skeleton flicker
+      fetchInvoices(undefined, true);
     } catch (err: any) {
       toast.error(err.message || 'Error updating invoice');
     } finally {
@@ -207,6 +214,7 @@ export function InvoiceReviewTable({
   };
 
   const handleConfirmAllGreen = async () => {
+    setIsConfirmingGreen(true);
     try {
       const res = await fetch('/api/invoices/confirm-all', {
         method: 'POST',
@@ -222,6 +230,8 @@ export function InvoiceReviewTable({
       }
     } catch (e: any) {
       toast.error('Bulk confirmation failed');
+    } finally {
+      setIsConfirmingGreen(false);
     }
   };
 
@@ -297,11 +307,15 @@ export function InvoiceReviewTable({
               variant="outline"
               size="sm"
               onClick={handleConfirmAllGreen}
-              disabled={invoices.length === 0}
+              disabled={invoices.length === 0 || isConfirmingGreen}
               className="text-xs h-8 border-[#17C964]/40 text-[#0F8C43] hover:bg-[#17C964]/10 shrink-0 font-medium"
             >
-              <Check className="h-3.5 w-3.5 mr-1.5" />
-              Confirm all green rows
+              {isConfirmingGreen ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              {isConfirmingGreen ? 'Confirming…' : 'Confirm all green rows'}
             </Button>
             <Button
               type="button"
@@ -341,7 +355,7 @@ export function InvoiceReviewTable({
                   : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
-              B2B ({summary?.b2bCount ?? 18})
+              B2B ({summary?.b2bCount ?? 0})
             </button>
             <button
               type="button"
@@ -353,7 +367,7 @@ export function InvoiceReviewTable({
                   : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
-              B2C Large ({summary?.b2clCount ?? 1})
+              B2C Large ({summary?.b2clCount ?? 0})
             </button>
             <button
               type="button"
@@ -365,7 +379,7 @@ export function InvoiceReviewTable({
                   : 'text-[#5F6B7A] hover:text-[#111418] hover:bg-[#F0F2F5]'
               )}
             >
-              B2C Small ({summary?.b2csCount ?? 5})
+              B2C Small ({summary?.b2csCount ?? 0})
             </button>
             <button
               type="button"
@@ -378,7 +392,7 @@ export function InvoiceReviewTable({
               )}
             >
               <AlertTriangle className="h-3 w-3 text-[#F5A524]" />
-              Needs Review ({summary?.flagCount ?? 3})
+              Needs Review ({summary?.flagCount ?? 0})
             </button>
           </div>
 
@@ -414,12 +428,7 @@ export function InvoiceReviewTable({
               </thead>
               <tbody className="divide-y divide-[#E3E7EE]">
                 {loading ? (
-                  <tr>
-                    <td colSpan={10} className="py-12 text-center text-[#5F6B7A]">
-                      <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2 text-[#F5A524]" />
-                      Loading invoice records…
-                    </td>
-                  </tr>
+                  <TableSkeleton rows={6} cols={10} />
                 ) : filteredInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12 text-center text-[#5F6B7A]">
@@ -429,8 +438,8 @@ export function InvoiceReviewTable({
                 ) : (
                   filteredInvoices.map((inv) => {
                     const firstItem = inv.items?.[0] || {
-                      hsn: '8471',
-                      rt: 18,
+                      hsn: (inv as any).hsn || '',
+                      rt: (inv as any).rt || 18,
                       txval: inv.totals?.txval || 0,
                     };
 
@@ -522,7 +531,7 @@ export function InvoiceReviewTable({
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-[#111418]">{firstItem.hsn || '8471'}</span>
+                            <span className="text-[#111418]">{firstItem.hsn || '—'}</span>
                           )}
                         </td>
 
@@ -542,7 +551,7 @@ export function InvoiceReviewTable({
                               </TooltipTrigger>
                               <TooltipContent>
                                 {inv.flag?.message ||
-                                  `Billed ${firstItem.rt}%, HSN ${firstItem.hsn} usually 18% — check before filing`}
+                                  `Billed ${firstItem.rt}%, check rate against statutory schedule`}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
@@ -736,18 +745,37 @@ export function InvoiceReviewTable({
                   </div>
                 </div>
 
-                {/* Flags Warning Box */}
-                {selectedInvoice.flags && selectedInvoice.flags.length > 0 && (
-                  <div className="p-3.5 rounded-[12px] bg-[#FDF6E4] border border-[#F5A524]/30 space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-[#9E6400]">
-                      <AlertTriangle className="h-4 w-4 text-[#F5A524]" />
-                      <span>Review Flags Detected</span>
+                {/* Flags Warning or Verified Box */}
+                {selectedInvoice.flags && selectedInvoice.flags.length > 0 ? (
+                  <div className={cn(
+                    "p-3.5 rounded-[12px] space-y-1.5",
+                    selectedInvoice.status === 'red'
+                      ? "bg-[#F31260]/10 border border-[#F31260]/20"
+                      : "bg-[#FDF6E4] border border-[#F5A524]/30"
+                  )}>
+                    <div className="flex items-center gap-2 text-xs font-semibold">
+                      {selectedInvoice.status === 'red' ? (
+                        <>
+                          <AlertOctagon className="h-4 w-4 text-[#F31260]" />
+                          <span className="text-[#C70E4E]">Blocking Errors Detected ({selectedInvoice.flags.length})</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-4 w-4 text-[#F5A524]" />
+                          <span className="text-[#9E6400]">Review Flags Detected ({selectedInvoice.flags.length})</span>
+                        </>
+                      )}
                     </div>
                     {selectedInvoice.flags.map((flg, idx) => (
                       <p key={idx} className="text-xs text-[#111418] pl-6">
                         • {flg.message}
                       </p>
                     ))}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-[12px] bg-[#17C964]/10 border border-[#17C964]/20 flex items-center gap-2 text-xs font-semibold text-[#0F8C43]">
+                    <CheckCircle2 className="h-4 w-4 text-[#17C964]" />
+                    <span>All validation rules passed. Ready for GSTR-1 export.</span>
                   </div>
                 )}
 

@@ -1,0 +1,162 @@
+{
+  "entity": {
+    "tradeName": "Prince Traders",
+    "gstin": "06ABCDE1234F1Z1",
+    "state": "Haryana",
+    "stateCode": "06",
+    "turnoverSlab": "OVER_5CR",
+    "returnPeriod": "202609",
+    "periodLabel": "September 2026"
+  },
+  "table_3_1_outward_supplies": {
+    "description": "Tax on outward and reverse charge inward supplies (from Sales Bills)",
+    "3_1_a_taxable_supplies": {
+      "taxable_value": 548000.0,
+      "igst": 84000.0,
+      "cgst": 6120.0,
+      "sgst": 6120.0,
+      "total_tax": 96240.0
+    },
+    "breakdown_by_section": {
+      "Table_4A_B2B": {
+        "invoices": [
+          "INV-TEST-001",
+          "INV-RATE-WARN-003",
+          "INV-HSN-ERROR-004"
+        ],
+        "taxable_value": 178000.0,
+        "igst": 26400.0,
+        "cgst": 1620.0,
+        "sgst": 1620.0
+      },
+      "Table_5_B2CL": {
+        "invoices": [
+          "INV-B2CL-005"
+        ],
+        "taxable_value": 320000.0,
+        "igst": 57600.0,
+        "cgst": 0.0,
+        "sgst": 0.0
+      },
+      "Table_7_B2CS": {
+        "invoices": [
+          "INV-TEST-002"
+        ],
+        "taxable_value": 50000.0,
+        "igst": 0.0,
+        "cgst": 4500.0,
+        "sgst": 4500.0
+      }
+    }
+  },
+  "table_4_eligible_itc": {
+    "description": "Eligible Input Tax Credit (ITC) Comparison & Risk Analysis",
+    "4_A_gstr2b_available": {
+      "records_count": 7,
+      "taxable_value": 465000.0,
+      "igst": 35100.0,
+      "cgst": 24300.0,
+      "sgst": 24300.0,
+      "total_available_itc": 83700.0
+    },
+    "4_A_books_claimed": {
+      "bills_count": 6,
+      "taxable_value": 490000.0,
+      "igst": 41400.0,
+      "cgst": 23400.0,
+      "sgst": 23400.0,
+      "total_books_itc": 88200.0
+    },
+    "discrepancies": {
+      "money_at_risk_rule_88d": {
+        "amount": 15300.0,
+        "items": [
+          {
+            "inum": "PUR-MISSING-103",
+            "supplier": "Slowfile Components Pvt Ltd",
+            "cause": "SUPPLIER_NOT_FILED",
+            "risk_amount": 14400.0,
+            "statutory_basis": "Section 16(2)(aa) & Rule 88D (DRC-01C notice risk)"
+          },
+          {
+            "inum": "PUR-VALUE-MISMATCH-104",
+            "supplier": "Metro Print Systems",
+            "cause": "VALUE_MISMATCH",
+            "risk_amount": 900.0,
+            "statutory_basis": "Books tax 10,800 exceeds 2B tax 9,900"
+          }
+        ]
+      },
+      "unclaimed_itc_missing_in_books": {
+        "amount": 10800.0,
+        "items": [
+          {
+            "inum": "CF-2026-8812",
+            "supplier": "Cloudflare India Pvt Ltd",
+            "igst": 8100.0,
+            "benefit": "Unclaimed legitimate credit available in 2B"
+          },
+          {
+            "inum": "AB-90412",
+            "supplier": "Airtel Broadband Ltd",
+            "cgst": 1350.0,
+            "sgst": 1350.0,
+            "benefit": "Unclaimed legitimate credit available in 2B"
+          }
+        ]
+      },
+      "blocked_portal_typo": {
+        "inum": "PUR-WRONG-GSTIN-105",
+        "supplier": "Apex Furniture Works",
+        "cause": "WRONG_GSTIN",
+        "amount": 18000.0,
+        "resolution": "Supplier filed under 06HIJKL9999P8Z9; requires GSTR-1 B2BA amendment"
+      }
+    },
+    "net_statutorily_safe_itc": 54900.0
+  },
+  "table_6_1_net_tax_payable": {
+    "description": "Payment of Tax (Cash Liability after ITC Set-off)",
+    "outward_liability": {
+      "igst": 84000.0,
+      "cgst": 6120.0,
+      "sgst": 6120.0,
+      "total": 96240.0
+    },
+    "itc_utilized": {
+      "igst_offset": 27000.0,
+      "cgst_offset": 6120.0,
+      "sgst_offset": 6120.0,
+      "total_utilized": 39240.0
+    },
+    "cash_tax_payable_challan": {
+      "igst": 57000.0,
+      "cgst": 0.0,
+      "sgst": 0.0,
+      "total_cash": 57000.0
+    },
+    "itc_carried_forward": {
+      "cgst_balance": 7830.0,
+      "sgst_balance": 7830.0,
+      "total_cf": 15660.0
+    }
+  },
+  "triangle_3_way_reconciliation": {
+    "sales_check_gstr1_vs_3b": {
+      "gstr1_liability": 96240.0,
+      "gstr3b_tax_paid": 96240.0,
+      "gap": 0.0,
+      "status": "green",
+      "statutory_rule": "Monitored under Rule 88C (DRC-01B outward liability notice)"
+    },
+    "credit_check_gstr2b_vs_3b": {
+      "gstr2b_available": 83700.0,
+      "gstr3b_claimed_books": 88200.0,
+      "excess_claim_gap": 4500.0,
+      "status": "amber",
+      "warning": "Books claim exceeds 2B available by 4,500; plus 14,400 unfiled bill risks DRC-01C",
+      "recommended_safe_claim": 54900.0,
+      "statutory_rule": "Monitored under Rule 88D (DRC-01C input credit mismatch notice)"
+    }
+  }
+}

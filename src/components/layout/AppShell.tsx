@@ -23,8 +23,10 @@ import {
   LogOut,
   User as UserIcon,
   X,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TopProgressBar, CuteLoader } from '@/components/ui/ZeroLatencyLoader';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -36,7 +38,7 @@ function AppShellInner({ children }: AppShellProps) {
   const { lang, toggleLang, t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { businesses, activeBusiness, activeBusinessId, activePeriod, loading: workspaceLoading, setActiveBusinessId, setActivePeriod } = useWorkspace();
+  const { businesses, activeBusiness, activeBusinessId, activePeriod, loading: workspaceLoading, setActiveBusinessId, setActivePeriod, refreshBusinesses } = useWorkspace();
   const [businessMenuOpen, setBusinessMenuOpen] = useState(false);
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -132,21 +134,13 @@ function AppShellInner({ children }: AppShellProps) {
 
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  if (workspaceLoading) {
-    return (
-      <div className="min-h-screen bg-[#F6F7F9] p-6 animate-pulse">
-        <div className="h-12 rounded-[12px] border border-[#E3E7EE] bg-white" />
-        <div className="mx-auto mt-8 h-64 max-w-[1200px] rounded-[16px] border border-[#E3E7EE] bg-white" />
-      </div>
-    );
-  }
-
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
     try {
       const res = await signInWithGoogle();
       if (res.user) {
         toast.success(`Signed in as ${res.user.displayName || res.user.email}`);
+        await refreshBusinesses();
       } else if (res.error) {
         // If popup closed by user, don't show noisy error
         if (res.error.includes('popup-closed-by-user')) {
@@ -168,6 +162,7 @@ function AppShellInner({ children }: AppShellProps) {
       toast.error(result.error || 'Could not sign out');
       return;
     }
+    await refreshBusinesses();
     setProfileMenuOpen(false);
     toast.success('Signed out');
     router.replace('/');
@@ -256,7 +251,11 @@ function AppShellInner({ children }: AppShellProps) {
               >
                 <span className="h-2 w-2 rounded-full bg-[#17C964]" />
                 <span className="truncate max-w-[130px] sm:max-w-[200px]">{activeBusiness?.name || 'Select business'}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-[#5F6B7A]" />
+                {workspaceLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 text-[#F5A524] animate-spin" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 text-[#5F6B7A]" />
+                )}
               </button>
               {businessMenuOpen && (
                 <div className="absolute left-0 top-full mt-2 z-50 min-w-[260px] rounded-[12px] border border-[#E3E7EE] bg-white p-1.5 shadow-lg">
@@ -359,15 +358,31 @@ function AppShellInner({ children }: AppShellProps) {
                 className="h-8 text-xs font-medium cursor-pointer"
               >
                 <UserIcon className="h-3.5 w-3.5 mr-1" />
-                {isSigningIn ? 'Signing in...' : 'Sign in'}
+                {isSigningIn ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin text-[#F5A524]" />
+                    Signing in…
+                  </span>
+                ) : (
+                  'Sign in'
+                )}
               </Button>
             )}
           </div>
         </header>
 
+        {/* Global Zero-Latency Top Progress Bar */}
+        <TopProgressBar active={workspaceLoading} />
+
         {/* Page Content Viewport (max-width 1200 per §9.1) */}
         <main className="flex-1 p-6 md:p-8 max-w-[1200px] w-full mx-auto">
-          {children}
+          {workspaceLoading ? (
+            <div className="flex flex-col items-center justify-center min-h-[320px] space-y-3">
+              <CuteLoader size="lg" text="Syncing workspace…" />
+            </div>
+          ) : (
+            children
+          )}
         </main>
 
         {/* ─────────────────────────────────────────────────────────────
