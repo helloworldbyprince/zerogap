@@ -11,17 +11,7 @@ import { ArrowRight, CheckCircle2, ChevronLeft, HelpCircle, Sparkles, UploadClou
 import { toast } from 'sonner';
 import { WORKSPACE_STORAGE_KEYS } from '@/lib/WorkspaceContext';
 import { auth, onAuthStateChanged } from '@/lib/firebase';
-
-const INDIAN_STATES = [
-  { code: '06', name: '06 - Haryana' },
-  { code: '07', name: '07 - Delhi' },
-  { code: '08', name: '08 - Rajasthan' },
-  { code: '09', name: '09 - Uttar Pradesh' },
-  { code: '24', name: '24 - Gujarat' },
-  { code: '27', name: '27 - Maharashtra' },
-  { code: '29', name: '29 - Karnataka' },
-  { code: '33', name: '33 - Tamil Nadu' },
-];
+import { INDIAN_STATES } from '@/lib/states';
 
 function OnboardingContent() {
   const router = useRouter();
@@ -190,7 +180,16 @@ function OnboardingContent() {
                     <input
                       type="text"
                       value={gstin}
-                      onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setGstin(val);
+                        if (val.length >= 2) {
+                          const code = val.slice(0, 2);
+                          if (INDIAN_STATES.some((s) => s.code === code)) {
+                            setStateCode(code);
+                          }
+                        }
+                      }}
                       onBlur={(e) => validateGstin(e.target.value)}
                       placeholder="06ABCDE1234F1Z5"
                       className={`w-full h-11 px-4 rounded-[12px] bg-[#F6F7F9] border ${
@@ -209,7 +208,13 @@ function OnboardingContent() {
                       </label>
                       <select
                         value={stateCode}
-                        onChange={(e) => setStateCode(e.target.value)}
+                        onChange={(e) => {
+                          const newCode = e.target.value;
+                          setStateCode(newCode);
+                          if (gstin && /^\d{2}/.test(gstin)) {
+                            setGstin(`${newCode}${gstin.slice(2)}`);
+                          }
+                        }}
                         className="w-full h-11 px-3 rounded-[12px] bg-[#F6F7F9] border border-[#E3E7EE] text-sm text-[#111418] focus:outline-none focus:border-[#F5A524] focus:bg-white transition-colors"
                       >
                         {INDIAN_STATES.map((s) => (

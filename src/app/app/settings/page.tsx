@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { auth } from '@/lib/firebase';
+import { INDIAN_STATES } from '@/lib/states';
 
 export default function SettingsPage() {
   const { lang, setLang, t } = useLanguage();
@@ -149,7 +150,16 @@ export default function SettingsPage() {
             <input
               type="text"
               value={gstin}
-              onChange={(e) => setGstin(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                const val = e.target.value.toUpperCase();
+                setGstin(val);
+                if (val.length >= 2) {
+                  const code = val.slice(0, 2);
+                  if (INDIAN_STATES.some((s) => s.code === code)) {
+                    setStateCode(code);
+                  }
+                }
+              }}
               className="w-full h-10 px-3 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-sm font-mono text-[#111418] focus:border-[#F5A524] focus:bg-white focus:outline-none uppercase transition-colors"
             />
           </div>
@@ -160,14 +170,20 @@ export default function SettingsPage() {
             </label>
             <select
               value={stateCode}
-              onChange={(e) => setStateCode(e.target.value)}
+              onChange={(e) => {
+                const newCode = e.target.value;
+                setStateCode(newCode);
+                if (gstin && /^\d{2}/.test(gstin)) {
+                  setGstin(`${newCode}${gstin.slice(2)}`);
+                }
+              }}
               className="w-full h-10 px-3 rounded-[10px] bg-[#F6F7F9] border border-[#E3E7EE] text-xs text-[#111418] focus:border-[#F5A524] focus:bg-white focus:outline-none cursor-pointer transition-colors"
             >
-              <option value="06">06 - Haryana</option>
-              <option value="07">07 - Delhi</option>
-              <option value="09">09 - Uttar Pradesh</option>
-              <option value="27">27 - Maharashtra</option>
-              <option value="29">29 - Karnataka</option>
+              {INDIAN_STATES.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.name}
+                </option>
+              ))}
             </select>
           </div>
 

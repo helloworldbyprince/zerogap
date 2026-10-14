@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { CONFIG } from '@/lib/config';
 import { COPY } from '@/lib/copy';
 import { cn } from '@/lib/utils';
+import { getStateNameByCode } from '@/lib/states';
 import {
   FileText,
   UploadCloud,
@@ -480,7 +481,9 @@ export default function SalesPage() {
                     <tbody className="divide-y divide-[#E3E7EE]">
                       {b2clInvoices.map((inv) => (
                         <tr key={inv.id} className="hover:bg-[#F6F7F9] transition-colors">
-                          <td className="py-2.5 px-4 text-[#111418] font-mono">{inv.pos}-Rajasthan</td>
+                          <td className="py-2.5 px-4 text-[#111418] font-mono">
+                            {inv.pos}-{getStateNameByCode(inv.pos)}
+                          </td>
                           <td className="py-2.5 px-3 font-mono text-[#111418]">{inv.inum}</td>
                           <td className="py-2.5 px-3 text-[#5F6B7A]">{inv.idt}</td>
                           <td className="py-2.5 px-3 text-right text-[#111418] font-medium tabular-nums">
@@ -522,7 +525,9 @@ export default function SalesPage() {
                     <tbody className="divide-y divide-[#E3E7EE]">
                       <tr className="hover:bg-[#F6F7F9] transition-colors">
                         <td className="py-2.5 px-4 text-[#111418] font-medium">Intra-State</td>
-                        <td className="py-2.5 px-3 font-mono text-[#111418]">06-Haryana</td>
+                        <td className="py-2.5 px-3 font-mono text-[#111418]">
+                          {activeBusiness?.stateCode || '06'}-{getStateNameByCode(activeBusiness?.stateCode || '06')}
+                        </td>
                         <td className="py-2.5 px-3 text-center text-[#111418]">18%</td>
                         <td className="py-2.5 px-3 text-right text-[#111418] font-medium tabular-nums">
                           ₹{b2csInvoices.reduce((s, i) => s + (i.totals?.txval || 0), 0).toLocaleString('en-IN')}

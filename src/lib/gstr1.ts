@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { CONFIG } from './config';
 import { lookupHsn } from './hsn';
+import { getStateNameByCode } from './states';
 
 export interface Gstr1Summary {
   gstin: string;
@@ -466,25 +467,7 @@ export async function buildGstr1Excel(invoices: any[], business: any, period: st
 }
 
 function getPosStateName(posCode: string): string {
-  const stateMap: Record<string, string> = {
-    '01': 'Jammu & Kashmir',
-    '02': 'Himachal Pradesh',
-    '03': 'Punjab',
-    '04': 'Chandigarh',
-    '05': 'Uttarakhand',
-    '06': 'Haryana',
-    '07': 'Delhi',
-    '08': 'Rajasthan',
-    '09': 'Uttar Pradesh',
-    '10': 'Bihar',
-    '19': 'West Bengal',
-    '24': 'Gujarat',
-    '27': 'Maharashtra',
-    '29': 'Karnataka',
-    '33': 'Tamil Nadu',
-    '36': 'Telangana',
-  };
-  return stateMap[posCode] || 'Other State';
+  return getStateNameByCode(posCode);
 }
 
 /**
